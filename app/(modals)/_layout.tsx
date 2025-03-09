@@ -1,4 +1,10 @@
-import { Stack } from "expo-router"
+import { Stack } from "expo-router";
+
+const screenTitles: Record<string, string> = {
+  settings: "Settings",
+  addGig: "New Gig",
+  profile: "Profile",
+};
 
 export default function ModalLayout() {
   return (
@@ -6,10 +12,10 @@ export default function ModalLayout() {
       screenOptions={({ route }) => ({
         presentation: "modal",
         animation: "fade",
-        // Prevent dismissing login/register screens by swipe
+        title: screenTitles[route.name] || route.name,
         gestureEnabled: !["login", "register"].includes(route.name),
       })}
     />
-  )
+  );
 }
 

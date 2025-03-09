@@ -16,24 +16,27 @@ export default function TabLayout() {
           <Ionicons name={focused ? 'home-sharp' : 'home-outline'} color={color} size={24} />
         ),
       }} />
-      <Tabs.Screen name="explore" options={{
-        title: 'Explore',
+      <Tabs.Screen name="jobs" options={{
+        title: 'My Gigs',
         tabBarIcon: ({ color, focused }) => (
           <Ionicons name={focused ? 'compass-sharp' : 'compass-outline'} color={color} size={24} />
         ),
       }} />
-      <Tabs.Screen name="orders" options={{
-        title: 'Orders',
-        tabBarIcon: ({ color, focused }) => (
-          <Ionicons name={focused ? 'cube-sharp' : 'cube-outline'} color={color} size={24} />
-        ),
-      }} />
+
       <Tabs.Screen name="profile" options={{
         title: 'Profile',
         tabBarIcon: ({ color, focused }) => (
           <Ionicons name={focused ? 'person-circle-sharp' : 'person-circle-outline'} color={color} size={24} />
         ),
       }} />
+
+      <Tabs.Screen name="orders" options={{
+        title: 'Orders',
+        tabBarIcon: ({ color, focused }) => (
+          <Ionicons name={focused ? 'cube-sharp' : 'cube-outline'} color={color} size={24} />
+        ),
+      }} />
+
       <Tabs.Screen name="message" options={{
         title: 'Messages',
         tabBarIcon: ({ color, focused }) => (
@@ -44,6 +47,8 @@ export default function TabLayout() {
   );
 }
 
+
+
 const getTabTitle = (routeName: string) => {
   const titles: { [key: string]: string } = {
     index: "Home",
@@ -51,12 +56,13 @@ const getTabTitle = (routeName: string) => {
     orders: "Orders",
     profile: "Profile",
     message: "Messages",
+    jobs: "My Gigs",
   };
   return titles[routeName] || "Livid"; // Default if undefined
 };
 
 const shouldShowHeader = (routeName: string) => {
-  return !['notifications', 'settings'].includes(routeName); // Hide header for modals
+  return !['notifications', 'settings', 'addGig'].includes(routeName);
 };
 
 const HeaderIcons = ({ route }: { route: string }) => {
@@ -78,6 +84,14 @@ const HeaderIcons = ({ route }: { route: string }) => {
           size={24}
           color="white"
           onPress={() => router.push('/settings')}
+        />
+      )}
+      {route === "jobs" && (
+        <Ionicons
+          name="add-circle-outline"
+          size={24}
+          color="white"
+          onPress={() => router.push('/addGig')}
         />
       )}
     </Pressable>

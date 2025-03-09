@@ -36,6 +36,7 @@ Ensure you have the following installed:
 2. Install dependencies:
    ```sh
    npm install
+   npx expo install @react-native-picker/picker @expo/vector-icons
    ```
 3. Start the Expo development server:
    ```sh
@@ -47,6 +48,8 @@ Ensure you have the following installed:
 - [React Native Docs](https://reactnative.dev/docs/getting-started)
 - [NativeWind Docs](https://www.nativewind.dev/)
 
+### Git Commits
+For git naming convention, refer to : https://medium.com/@shinjithkanhangad/git-good-best-practices-for-branch-naming-and-commit-messages-a903b9f08d68
 
 ## License
 This project is licensed under the MIT License.
