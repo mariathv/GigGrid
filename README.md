@@ -2,6 +2,8 @@
 
 GigGrid is a freelance job portal designed to connect clients with skilled freelancers.
 
+![Mockup](previews/mockup-sprint1.png)
+
 ## Features
 - **Freelancer Services**: Freelancers can list their services with pricing, descriptions, and images.
 - **Client Search & Purchase**: Clients can browse and hire freelancers based on categories, ratings, and reviews.

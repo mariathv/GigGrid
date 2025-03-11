@@ -16,19 +16,14 @@ export default function TabLayout() {
           <Ionicons name={focused ? 'home-sharp' : 'home-outline'} color={color} size={24} />
         ),
       }} />
-      <Tabs.Screen name="jobs" options={{
+      <Tabs.Screen name="myGigs" options={{
         title: 'My Gigs',
         tabBarIcon: ({ color, focused }) => (
           <Ionicons name={focused ? 'compass-sharp' : 'compass-outline'} color={color} size={24} />
         ),
       }} />
 
-      <Tabs.Screen name="profile" options={{
-        title: 'Profile',
-        tabBarIcon: ({ color, focused }) => (
-          <Ionicons name={focused ? 'person-circle-sharp' : 'person-circle-outline'} color={color} size={24} />
-        ),
-      }} />
+
 
       <Tabs.Screen name="orders" options={{
         title: 'Orders',
@@ -41,6 +36,13 @@ export default function TabLayout() {
         title: 'Messages',
         tabBarIcon: ({ color, focused }) => (
           <Ionicons name={focused ? 'chatbubble-ellipses-sharp' : 'chatbubble-ellipses-outline'} color={color} size={24} />
+        ),
+      }} />
+
+      <Tabs.Screen name="profile" options={{
+        title: 'Profile',
+        tabBarIcon: ({ color, focused }) => (
+          <Ionicons name={focused ? 'person-circle-sharp' : 'person-circle-outline'} color={color} size={24} />
         ),
       }} />
     </Tabs>
@@ -62,7 +64,7 @@ const getTabTitle = (routeName: string) => {
 };
 
 const shouldShowHeader = (routeName: string) => {
-  return !['notifications', 'settings', 'addGig'].includes(routeName);
+  return !['notifications', 'settings', 'addGig', 'myGigs'].includes(routeName);
 };
 
 const HeaderIcons = ({ route }: { route: string }) => {

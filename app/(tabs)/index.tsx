@@ -6,6 +6,9 @@ import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
+import GigCard from "@/components/GigCard"
+import OrderItemCard from "@/components/OrderItem"
+import "@/global.css"
 
 // Type definitions
 interface Gig {
@@ -28,13 +31,8 @@ interface OrderItem {
   date: string;
 }
 
-interface GigCardProps {
-  gig: Gig;
-}
 
-interface OrderItemProps {
-  item: OrderItem;
-}
+
 
 // Mock data for the UI
 const myGigs: Gig[] = [
@@ -73,7 +71,7 @@ const myGigs: Gig[] = [
 const recentOrders: OrderItem[] = [
   {
     id: "1",
-    clientName: "John Smith",
+    clientName: "Maria Naeem",
     gigTitle: "Professional Mobile App Development",
     amount: "$250",
     status: "in_progress",
@@ -81,7 +79,7 @@ const recentOrders: OrderItem[] = [
   },
   {
     id: "2",
-    clientName: "Sarah Johnson",
+    clientName: "Hussnain Ul Abidin",
     gigTitle: "Modern UI/UX Design for Web & Mobile",
     amount: "$180",
     status: "pending",
@@ -89,7 +87,7 @@ const recentOrders: OrderItem[] = [
   },
   {
     id: "3",
-    clientName: "Michael Brown",
+    clientName: "Hamdan Sajid",
     gigTitle: "SEO-Optimized Content Writing",
     amount: "$75",
     status: "completed",
@@ -97,80 +95,9 @@ const recentOrders: OrderItem[] = [
   },
 ]
 
-const GigCard = ({ gig }: GigCardProps) => {
-  const router = useRouter()
 
-  return (
-    <TouchableOpacity style={styles.gigCard}>
-      <View style={styles.gigImageContainer}>
-        <View style={[styles.statusIndicator, { backgroundColor: gig.isActive ? "#4CAF50" : "#FFA000" }]} />
-        <Image
-          source={{ uri: gig.image || "/placeholder.svg?height=100&width=100" }}
-          style={styles.gigImage}
-        />
-      </View>
-      <View style={styles.gigContent}>
-        <ThemedText style={styles.gigTitle} numberOfLines={2}>{gig.title}</ThemedText>
-        <ThemedText style={styles.gigCategory}>{gig.category}</ThemedText>
 
-        <View style={styles.gigMeta}>
-          <View style={styles.metaItem}>
-            <Ionicons name="star" size={14} color="#FFC107" />
-            <ThemedText style={styles.metaText}>{gig.rating}</ThemedText>
-          </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="cart-outline" size={14} color="#777" />
-            <ThemedText style={styles.metaText}>{gig.orders} orders</ThemedText>
-          </View>
-        </View>
 
-        <ThemedText style={styles.gigPrice}>{gig.price}</ThemedText>
-      </View>
-    </TouchableOpacity>
-  )
-}
-
-const OrderItem = ({ item }: OrderItemProps) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending": return "#FFA000";
-      case "in_progress": return "#2196F3";
-      case "completed": return "#4CAF50";
-      case "cancelled": return "#F44336";
-      default: return "#777";
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "pending": return "Pending";
-      case "in_progress": return "In Progress";
-      case "completed": return "Completed";
-      case "cancelled": return "Cancelled";
-      default: return status;
-    }
-  };
-
-  return (
-    <TouchableOpacity style={styles.orderItem} onPress={() => { }}>
-      <View style={styles.orderHeader}>
-        <ThemedText style={styles.clientName}>{item.clientName}</ThemedText>
-        <ThemedText style={styles.orderAmount}>{item.amount}</ThemedText>
-      </View>
-
-      <ThemedText style={styles.orderTitle} numberOfLines={1}>{item.gigTitle}</ThemedText>
-
-      <View style={styles.orderFooter}>
-        <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20`, borderColor: getStatusColor(item.status) }]}>
-          <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-            {getStatusText(item.status)}
-          </ThemedText>
-        </View>
-        <ThemedText style={styles.orderDate}>{item.date}</ThemedText>
-      </View>
-    </TouchableOpacity>
-  )
-}
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -182,7 +109,7 @@ export default function HomeScreen() {
         {/* Header Section */}
         <View style={styles.header}>
           <View>
-            <ThemedText style={styles.greeting}>Hello, Freelancer</ThemedText>
+            <ThemedText style={styles.greeting} className="text-red-600">Hello, Freelancer</ThemedText>
             <ThemedText style={styles.subGreeting}>Manage your gigs and orders</ThemedText>
           </View>
           <TouchableOpacity
@@ -230,7 +157,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={styles.statCard}
-            onPress={() => router.push('/jobs')}
+            onPress={() => router.push('/myGigs')}
           >
             <View style={[styles.statIconContainer, { backgroundColor: 'rgba(75, 113, 114, 0.1)' }]}>
               <Ionicons name="briefcase-outline" size={24} color="#4B7172" />
@@ -244,7 +171,7 @@ export default function HomeScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <ThemedText style={styles.sectionTitle}>My Gigs</ThemedText>
-            <TouchableOpacity onPress={() => router.push('/jobs')}>
+            <TouchableOpacity onPress={() => router.push('/myGigs')}>
               <ThemedText style={styles.seeAllText}>See All</ThemedText>
             </TouchableOpacity>
           </View>
@@ -278,7 +205,7 @@ export default function HomeScreen() {
           </View>
 
           {recentOrders.map(item => (
-            <OrderItem key={item.id} item={item} />
+            <OrderItemCard key={item.id} item={item} />
           ))}
         </View>
 
@@ -393,6 +320,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
+    color: "#CFD5D5"
   },
   filterButton: {
     padding: 5,

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import "@/global.css"
 
 const screenTitles: Record<string, string> = {
   settings: "Settings",
@@ -14,6 +15,7 @@ export default function ModalLayout() {
         animation: "fade",
         title: screenTitles[route.name] || route.name,
         gestureEnabled: !["login", "register"].includes(route.name),
+        headerShown: false
       })}
     />
   );
