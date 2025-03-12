@@ -10,8 +10,8 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native"
-import { useState } from "react"
-import { Stack, Link, useRouter } from "expo-router"
+import { useState, useEffect } from "react"
+import { Stack, Link, useRouter, useLocalSearchParams } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { Ionicons } from "@expo/vector-icons"
 
@@ -27,11 +27,19 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [userType, setUserType] = useState<string | null>(null)
+
   const router = useRouter()
   const { signUp } = useAuth()
+  const params = useLocalSearchParams()
+
+  useEffect(() => {
+    if (params.userType) {
+      setUserType(params.userType as string)
+    }
+  }, [params])
 
   const handleRegister = async () => {
-    // Basic validation
     if (!name || !email || !password || !confirmPassword) {
       alert("Please fill in all fields")
       return
@@ -42,9 +50,14 @@ export default function RegisterScreen() {
       return
     }
 
+    if (!userType) {
+      alert("User type is missing. Please go back and select your user type.")
+      return
+    }
+
     setIsLoading(true)
     try {
-      const success = await signUp(name, email, password)
+      const success = await signUp(name, email, password, confirmPassword, userType);
       if (success) {
         // Navigation will be handled by the AuthContext
       } else {
@@ -65,11 +78,11 @@ export default function RegisterScreen() {
         options={{
           headerShown: true,
           title: "",
-          headerStyle: { backgroundColor: "#000" },
+          headerStyle: { backgroundColor: "#151619" },
           headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="close" size={28} color="#fff" />
+              <Ionicons name="arrow-back" size={28} color="#fff" />
             </TouchableOpacity>
           ),
         }}
@@ -79,7 +92,9 @@ export default function RegisterScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerContainer}>
             <ThemedText style={styles.title}>Create account</ThemedText>
-            <ThemedText style={styles.subtitle}>Create a new account to get started</ThemedText>
+            <ThemedText style={styles.subtitle}>
+              Create a new account as {userType === 'freelancer' ? 'a freelancer' : 'a client'}
+            </ThemedText>
           </View>
 
           <View style={styles.formContainer}>
@@ -190,7 +205,6 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
   },
   keyboardAvoid: {
     flex: 1,
@@ -204,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 25,
     fontWeight: "bold",
     color: "#fff",
     marginBottom: 8,
@@ -275,4 +289,3 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 })
-

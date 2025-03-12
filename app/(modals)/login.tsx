@@ -51,21 +51,6 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="light" />
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: "",
-          headerStyle: { backgroundColor: "#000" },
-          headerShadowVisible: false,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="close" size={28} color="#fff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoid}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerContainer}>
@@ -132,7 +117,7 @@ export default function LoginScreen() {
 
           <View style={styles.footer}>
             <ThemedText style={styles.footerText}>Don't have an account?</ThemedText>
-            <Link href="/register" asChild>
+            <Link href="/user-type" asChild>
               <TouchableOpacity disabled={isLoading}>
                 <ThemedText style={styles.registerLink}>Sign Up</ThemedText>
               </TouchableOpacity>
@@ -147,7 +132,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    paddingTop: 25
   },
   keyboardAvoid: {
     flex: 1,

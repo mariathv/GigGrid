@@ -3,57 +3,60 @@
 import type React from "react"
 import { createContext, useState, useContext, useEffect } from "react"
 import { useRouter, useSegments } from "expo-router"
+import { apiRequest } from "@/hooks/api/api-gg"
 
-// Define the auth state type
+type User = {
+  id: string
+  email: string
+  name: string
+  userType?: "Freelancer" | "Client"
+}
+
 type AuthState = {
   isAuthenticated: boolean
-  user: any | null
+  user: User | null
   signIn: (email: string, password: string) => Promise<boolean>
-  signUp: (name: string, email: string, password: string) => Promise<boolean>
+  signUp: (name: string, email: string, password: string, confirmPassword: string, userType: string) => Promise<boolean>
   signOut: () => void
 }
 
-// Create the context with a default value
 const AuthContext = createContext<AuthState>({
   isAuthenticated: false,
   user: null,
   signIn: async () => false,
   signUp: async () => false,
-  signOut: () => {},
+  signOut: () => { },
 })
 
-// Provider component that wraps your app and makes auth object available to any child component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
   const segments = useSegments()
 
-  // Check if the user is authenticated when the segments change
   useEffect(() => {
-    const inAuthGroup = segments[0] === "(modals)" && (segments[1] === "login" || segments[1] === "register")
+    const inAuthGroup =
+      segments[0] === "(modals)" &&
+      (segments[1] === "login" || segments[1] === "register" || segments[1] === "user-type")
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to the login page if not authenticated and not already on an auth screen
-      router.replace("/login")
+      router.replace("/user-type")
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to the home page if authenticated but still on an auth screen
       router.replace("/(tabs)")
     }
   }, [isAuthenticated, segments])
 
-  // Mock sign in function - replace with actual authentication
   const signIn = async (email: string, password: string) => {
     try {
-      // Here you would typically make an API call to validate credentials
-      // For demo purposes, we'll just simulate a successful login
-      // In a real app, you would verify credentials with your backend
 
-      // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Mock successful authentication
-      const userData = { id: "1", email, name: "User" }
+      const userData: User = {
+        id: "1",
+        email,
+        name: "User",
+        userType: "Freelancer",
+      }
       setUser(userData)
       setIsAuthenticated(true)
       return true
@@ -63,31 +66,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Mock sign up function - replace with actual registration
-  const signUp = async (name: string, email: string, password: string) => {
+  const signUp = async (name: string, email: string, password: string, passwordConfirm: string, userType: string) => {
     try {
-      // Here you would typically make an API call to register the user
-      // For demo purposes, we'll just simulate a successful registration
+      const requestBody = {
+        name,
+        email,
+        password,
+        passwordConfirm,
+        userType
+      };
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await apiRequest<{
+        status: string;
+        data: {
+          user: {
+            _id: string;
+            email: string;
+            name: string;
+            userType: "Freelancer" | "Client";
+          };
+        };
+        token?: string;
+      }>("auth/register", requestBody, "POST", 20000);
 
-      // Mock successful registration
-      const userData = { id: "1", email, name }
-      setUser(userData)
-      setIsAuthenticated(true)
-      return true
+
+      if (response.status === "success" && response.data?.user) {
+        const userData: User = {
+          id: response.data.user._id,
+          email: response.data.user.email,
+          name: response.data.user.name,
+          userType: response.data.user.userType as "Freelancer" | "Client",
+        };
+
+        if (response.token) {
+          // Store token
+        }
+
+        setUser(userData);
+        setIsAuthenticated(true);
+        return true;
+      } else {
+        throw new Error("Registration failed");
+      }
+
     } catch (error) {
-      console.error("Sign up error:", error)
-      return false
+      console.error("Sign up error:", error instanceof Error ? error.message : String(error));
+      return false;
     }
-  }
+  };
 
   // Sign out function
   const signOut = () => {
     setUser(null)
     setIsAuthenticated(false)
-    router.replace("/login")
+    router.replace("/user-type")
   }
 
   return (
@@ -95,6 +127,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Custom hook to use the auth context
 export const useAuth = () => useContext(AuthContext)
 
