@@ -34,10 +34,11 @@ export default function RegisterScreen() {
   const params = useLocalSearchParams()
 
   useEffect(() => {
+    // Get userType from params
     if (params.userType) {
       setUserType(params.userType as string)
     }
-  }, [params])
+  }, [params.userType])
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -57,7 +58,7 @@ export default function RegisterScreen() {
 
     setIsLoading(true)
     try {
-      const success = await signUp(name, email, password, confirmPassword, userType);
+      const success = await signUp(name, email, password, confirmPassword, userType)
       if (success) {
         // Navigation will be handled by the AuthContext
       } else {
@@ -93,7 +94,7 @@ export default function RegisterScreen() {
           <View style={styles.headerContainer}>
             <ThemedText style={styles.title}>Create account</ThemedText>
             <ThemedText style={styles.subtitle}>
-              Create a new account as {userType === 'freelancer' ? 'a freelancer' : 'a client'}
+              Create a new account as {userType === "freelancer" ? "a freelancer" : "a client"}
             </ThemedText>
           </View>
 
@@ -289,3 +290,4 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 })
+

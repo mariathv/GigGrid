@@ -6,9 +6,7 @@ export const apiRequest = async <T = any>(
     method: string = "POST",
     timeout: number = 20000 //20 seconds time out
 ): Promise<T> => {
-    let success = false;
-
-    while (!success) {
+  
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -27,7 +25,6 @@ export const apiRequest = async <T = any>(
             }
 
             const json = await response.json() as T;
-            success = true;
             return json;
 
         } catch (error) {
@@ -40,7 +37,8 @@ export const apiRequest = async <T = any>(
                 console.error("Fetch error:", error instanceof Error ? error.message : String(error));
             }
         }
-    }
+    
+
 
     throw new Error("Failed to complete API request");
 };

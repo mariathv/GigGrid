@@ -10,8 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native"
 import { useState } from "react"
-import { Stack, Link, useRouter } from "expo-router"
-import { StatusBar } from "expo-status-bar"
+import { Link, useRouter } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 
 import { ThemedText } from "@/components/ThemedText"
@@ -24,6 +23,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const router = useRouter()
   const { signIn } = useAuth()
 
@@ -35,7 +35,7 @@ export default function LoginScreen() {
 
     setIsLoading(true)
     try {
-      const success = await signIn(email, password)
+      const success = await signIn(email, password, rememberMe)
       if (success) {
         // Navigation will be handled by the AuthContext
       } else {
@@ -98,9 +98,22 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword} disabled={isLoading}>
-              <ThemedText style={styles.forgotPasswordText}>Forgot password?</ThemedText>
-            </TouchableOpacity>
+            <View style={styles.rememberMeContainer}>
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => setRememberMe(!rememberMe)}
+                disabled={isLoading}
+              >
+                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                  {rememberMe && <Ionicons name="checkmark" size={16} color="#fff" />}
+                </View>
+                <ThemedText style={styles.rememberMeText}>Remember me</ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.forgotPassword} disabled={isLoading}>
+                <ThemedText style={styles.forgotPasswordText}>Forgot password?</ThemedText>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -132,7 +145,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 25
+    paddingTop: 25,
   },
   keyboardAvoid: {
     flex: 1,
@@ -186,9 +199,35 @@ const styles = StyleSheet.create({
     right: 16,
     top: 16,
   },
+  rememberMeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#4B7172",
+    marginRight: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: "#4B7172",
+  },
+  rememberMeText: {
+    color: "#ccc",
+    fontSize: 14,
+  },
   forgotPassword: {
     alignSelf: "flex-end",
-    marginBottom: 32,
   },
   forgotPasswordText: {
     color: "#4B7172",

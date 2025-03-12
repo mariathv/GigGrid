@@ -3,7 +3,12 @@
 import type React from "react"
 import { createContext, useState, useContext, useEffect } from "react"
 import { useRouter, useSegments } from "expo-router"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { apiRequest } from "@/hooks/api/api-gg"
+
+// Storage keys
+const AUTH_TOKEN_KEY = "auth_token"
+const USER_DATA_KEY = "user_data"
 
 type User = {
   id: string
@@ -15,7 +20,7 @@ type User = {
 type AuthState = {
   isAuthenticated: boolean
   user: User | null
-  signIn: (email: string, password: string) => Promise<boolean>
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>
   signUp: (name: string, email: string, password: string, confirmPassword: string, userType: string) => Promise<boolean>
   signOut: () => void
 }
@@ -25,46 +30,72 @@ const AuthContext = createContext<AuthState>({
   user: null,
   signIn: async () => false,
   signUp: async () => false,
-  signOut: () => { },
+  signOut: () => {},
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const segments = useSegments()
 
+  // Check for existing token on startup
   useEffect(() => {
+    const checkToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY)
+        const userData = await AsyncStorage.getItem(USER_DATA_KEY)
+
+        if (token && userData) {
+          // Token exists, set authenticated state
+          setUser(JSON.parse(userData))
+          setIsAuthenticated(true)
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkToken()
+  }, [])
+
+  // Handle navigation based on auth state
+  useEffect(() => {
+    if (isLoading) return // Don't redirect while checking auth state
+
     const inAuthGroup =
       segments[0] === "(modals)" &&
       (segments[1] === "login" || segments[1] === "register" || segments[1] === "user-type")
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/user-type")
+      router.replace("/login")
     } else if (isAuthenticated && inAuthGroup) {
       router.replace("/(tabs)")
     }
-  }, [isAuthenticated, segments])
+  }, [isAuthenticated, segments, isLoading])
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe = false) => {
     try {
-
       const requestBody = {
-        email, password
+        email,
+        password,
       }
 
       const response = await apiRequest<{
-        status: string;
+        status: string
         data: {
           user: {
-            _id: string;
-            email: string;
-            name: string;
-            userType: "Freelancer" | "Client";
-          };
-        };
-        token?: string;
-      }>("auth/login", requestBody, "POST", 20000);
+            _id: string
+            email: string
+            name: string
+            userType: "Freelancer" | "Client"
+          }
+        }
+        token?: string
+      }>("auth/login", requestBody, "POST", 20000)
 
       if (response.status && response.data?.user) {
         const userData: User = {
@@ -74,15 +105,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userType: response.data.user.userType,
         }
 
-        if (response.token) {
-          // Store token
+        // Store token and user data if remember me is checked
+        if (rememberMe && response.token) {
+          await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token)
+          await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData))
         }
 
         setUser(userData)
         setIsAuthenticated(true)
-        return true;
+        return true
       } else {
-        throw new Error("Sign in failed");
+        throw new Error("Sign in failed")
       }
     } catch (error) {
       console.error("Sign in error:", error)
@@ -97,22 +130,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         passwordConfirm,
-        userType
-      };
+        userType,
+      }
 
       const response = await apiRequest<{
-        status: string;
+        status: string
         data: {
           user: {
-            _id: string;
-            email: string;
-            name: string;
-            userType: "Freelancer" | "Client";
-          };
-        };
-        token?: string;
-      }>("auth/register", requestBody, "POST", 20000);
-
+            _id: string
+            email: string
+            name: string
+            userType: "Freelancer" | "Client"
+          }
+        }
+        token?: string
+      }>("auth/register", requestBody, "POST", 20000)
 
       if (response.status === "success" && response.data?.user) {
         const userData: User = {
@@ -120,30 +152,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: response.data.user.email,
           name: response.data.user.name,
           userType: response.data.user.userType as "Freelancer" | "Client",
-        };
-
-        if (response.token) {
-          // Store token
         }
 
-        setUser(userData);
-        setIsAuthenticated(true);
-        return true;
-      } else {
-        throw new Error("Registration failed");
-      }
+        // Store token and user data on successful registration
+        if (response.token) {
+          await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token)
+          await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData))
+        }
 
+        setUser(userData)
+        setIsAuthenticated(true)
+        return true
+      } else {
+        throw new Error("Registration failed")
+      }
     } catch (error) {
-      console.error("Sign up error:", error instanceof Error ? error.message : String(error));
-      return false;
+      console.error("Sign up error:", error instanceof Error ? error.message : String(error))
+      return false
     }
-  };
+  }
 
   // Sign out function
-  const signOut = () => {
-    setUser(null)
-    setIsAuthenticated(false)
-    router.replace("/user-type")
+  const signOut = async () => {
+    try {
+      // Clear stored token and user data
+      await AsyncStorage.removeItem(AUTH_TOKEN_KEY)
+      await AsyncStorage.removeItem(USER_DATA_KEY)
+
+      setUser(null)
+      setIsAuthenticated(false)
+      router.replace("/login")
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
   }
 
   return (
