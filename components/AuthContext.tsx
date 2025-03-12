@@ -49,17 +49,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
 
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const userData: User = {
-        id: "1",
-        email,
-        name: "User",
-        userType: "Freelancer",
+      const requestBody = {
+        email, password
       }
-      setUser(userData)
-      setIsAuthenticated(true)
-      return true
+
+      const response = await apiRequest<{
+        status: string;
+        data: {
+          user: {
+            _id: string;
+            email: string;
+            name: string;
+            userType: "Freelancer" | "Client";
+          };
+        };
+        token?: string;
+      }>("auth/login", requestBody, "POST", 20000);
+
+      if (response.status && response.data?.user) {
+        const userData: User = {
+          id: response.data.user._id,
+          email: response.data.user.email,
+          name: response.data.user.name,
+          userType: response.data.user.userType,
+        }
+
+        if (response.token) {
+          // Store token
+        }
+
+        setUser(userData)
+        setIsAuthenticated(true)
+        return true;
+      } else {
+        throw new Error("Sign in failed");
+      }
     } catch (error) {
       console.error("Sign in error:", error)
       return false
