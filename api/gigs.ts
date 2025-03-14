@@ -14,7 +14,7 @@ export const addGig = async (gigData: GigData) => {
 
 export const getMyGigs = async () => {
     try {
-        const response = await api.get('/gigs');
+        const response = await api.get('/gigs/getmygigs');
         return response.data;
     } catch (error: any) {
         console.error('get gigs failed:', error?.response?.data || error.message);

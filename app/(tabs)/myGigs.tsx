@@ -12,45 +12,9 @@ import "@/global.css"
 import { getMyGigs } from "@/api/gigs"
 import { GigData } from "@/types/gigs"
 
-// Type definitions
-interface Gig {
-    id: string;
-    title: string;
-    category: string;
-    price: string;
-    rating: number;
-    orders: number;
-    image: string;
-    isActive: boolean;
-    createdAt: string;
-}
 
-// Mock data for the UI
-const myGigs: Gig[] = [
-    {
-        id: "1",
-        title: "Professional Mobile App Development",
-        category: "Programming & Tech",
-        price: "From $150",
-        rating: 4.8,
-        orders: 24,
-        image: "/placeholder.svg",
-        isActive: true,
-        createdAt: "2023-10-15",
-    },
-    {
-        id: "2",
-        title: "Modern UI/UX Design for Web & Mobile",
-        category: "Graphics & Design",
-        price: "From $120",
-        rating: 4.9,
-        orders: 18,
-        image: "/placeholder.svg",
-        isActive: true,
-        createdAt: "2023-11-20",
-    },
 
-]
+
 
 type FilterOption = "all" | "active" | "inactive";
 type SortOption = "newest" | "oldest" | "highest_rated" | "most_orders";
@@ -70,8 +34,8 @@ export default function MyGigsScreen() {
             try {
                 const response = await getMyGigs();
 
-                const gigsArray = Array.isArray(response?.data?.allGigs)
-                    ? response.data.allGigs
+                const gigsArray = Array.isArray(response?.data?.myGigs)
+                    ? response.data.myGigs
                     : [];
 
                 setFilteredGigs(gigsArray);
@@ -335,7 +299,7 @@ export default function MyGigsScreen() {
                     ) : (
                         <View className="items-center justify-center py-10">
                             <Ionicons name="search" size={50} color="#333" />
-                            <Text className="mt-4 text-lg font-semibold">No gigs found</Text>
+                            <Text className="mt-4 text-lg font-semibold text-white">No gigs found</Text>
                             <Text className="mt-2 text-gray-400 text-center">
                                 We couldn't find any gigs matching your search criteria.
                             </Text>

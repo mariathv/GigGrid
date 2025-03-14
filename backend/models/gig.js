@@ -86,6 +86,11 @@ const gigSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        userID: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: [true, "Gig must have a user ID"]
+        }
     },
     {
         timestamps: true,
