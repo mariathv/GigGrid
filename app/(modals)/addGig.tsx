@@ -21,6 +21,10 @@ import { Colors } from "@/constants/Colors";
 import { ThemedText } from "@/components/ThemedText";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { addGig } from "@/api/gigs";
+import { GigData } from "@/types/gigs";
+
+
 
 type Category = {
     id: number;
@@ -39,14 +43,8 @@ type PackageData = {
     features: string[];
 };
 
-type GigData = {
-    title: string;
-    description: string;
-    packages: PackageData[];
-    categoryId: number;
-    createdAt: Date;
-    tags: string[];
-};
+
+
 
 type AddGigProps = {
     onClose: () => void;
@@ -80,6 +78,7 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
     const [newTag, setNewTag] = useState<string>("");
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [activePackage, setActivePackage] = useState<PackageType>("basic");
+
 
     // Initialize all three package types
     const [packages, setPackages] = useState<Record<PackageType, PackageData>>({
@@ -131,24 +130,59 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (validateForm()) {
-            const packagesArray = Object.values(packages).filter(pkg =>
-                pkg.title && pkg.price > 0
-            );
+            const packagesArray = {
+                basic: packages.basic,
+                standard: packages.standard,
+                premium: packages.premium
+            };
+
+
+            const mapPackage = (pkg: any) => ({
+                ...pkg,
+                numberOfRevisions: pkg.revisions
+            });
+
+            const categoryMap: Record<number, string> = {
+                1: "Graphic Design",
+                2: "Writing",
+                3: "Web Development",
+                4: "Mobile Development",
+                5: "Digital Marketing",
+                6: "Video Editing"
+            };
+
+            const categoryName = category ? categoryMap[category] : "None";
+
+
+
 
             const gigData: GigData = {
                 title,
                 description,
-                packages: packagesArray,
-                categoryId: category!,
-                createdAt: new Date(),
+                category: categoryName,
                 tags,
+                basic: mapPackage(packages.basic),
+                standard: mapPackage(packages.standard),
+                premium: mapPackage(packages.premium)
             };
 
-            onSubmit(gigData);
-            Alert.alert("Success", "Your gig has been posted successfully!");
-            resetForm();
+
+            console.log(gigData);
+
+            try {
+                const response = await addGig(gigData);
+                console.log("Gig added successfully:", response.data);
+                Alert.alert("Success", "Your gig has been posted successfully!");
+                resetForm();
+
+                router.push("/myGigs")
+
+            } catch (error: any) {
+                console.error("Error adding gig:", error);
+                Alert.alert("Error", error?.response?.data?.message || "Something went wrong!");
+            }
         }
     };
 
