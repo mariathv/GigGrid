@@ -4,6 +4,8 @@ const { default: mongoose } = require("mongoose")
 const { getBucket } = require("../utils/gridfs");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/appError");
 
 const userController = {
     uploadPfp: async (req, res) => {
@@ -85,59 +87,28 @@ const userController = {
         }
     },
     updateUser: async (req, res, next) => {
-        const { userId, name, email, password, passwordConfirm } = req.body;
+        const { name } = req.body;
 
-        try {
-            // Find the user by ID
-            const existingUser = await User.findById(userId);
-            if (!existingUser) {
-                return res.status(404).json({
-                    status: "fail",
-                    message: "User not found",
-                });
-            }
-
-            if (password) {
-                if (password !== passwordConfirm) {
-                    return res.status(400).json({
-                        status: "fail",
-                        message: "Passwords do not match",
-                    });
-                }
-
-                existingUser.password = await bcrypt.hash(password, 12);
-            }
-
-            if (name) existingUser.name = name;
-
-            const updatedUser = await existingUser.save();
-
-            if (password) {
-                const token = jwt.sign({ id: updatedUser._id }, "your_jwt_secret", {
-                    expiresIn: "7d",
-                });
-                res.status(200).json({
-                    status: "success",
-                    token,
-                    data: {
-                        user: updatedUser,
-                    },
-                });
-            } else {
-                res.status(200).json({
-                    status: "success",
-                    data: {
-                        user: updatedUser,
-                    },
-                });
-            }
-        } catch (err) {
-            console.log(err.message);
-            res.status(400).json({
-                status: "fail",
-                message: "Something went wrong",
-            });
+        if (!name) {
+            return next(new AppError("Name is required" , 400));
         }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            {name},
+            {new : true , runValidators:true}
+        )
+
+        if(!updatedUser) {
+            return next(new AppError("User not found" , 400));
+        }
+
+        res.status(200).json({
+            status: "success",
+            data: {
+                user: updatedUser
+            }
+        });
     },
 };
 

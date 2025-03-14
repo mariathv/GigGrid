@@ -4,6 +4,14 @@ const authController = require("./../controllers/authController");
 
 const router = express.Router();
 
+router
+  .route("/getmygigs")
+  .get(
+    authController.protect,
+    authController.restrictTo("Freelancer"),
+    gigController.getMyGigs
+  );
+
 router.route("/").get(gigController.getAllGigs);
 
 router
