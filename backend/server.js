@@ -24,6 +24,20 @@ mongoose.connect(DB, {
   console.log("DB connection successful !")
 })
 
+let bucket;
+mongoose.connection.on("connected", () => {
+  var db = mongoose.connections[0].db;
+  bucket = new mongoose.mongo.GridFSBucket(db, {
+    bucketName: "newBucket"
+  });
+});
+
+
+
+app.get('/', (req, res) => {
+  res.send('GG - Server Running')
+})
+
 
 const port = 3000 || process.env.PORT;
 app.listen(port, () => {
