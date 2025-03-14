@@ -55,6 +55,11 @@ const gigSchema = new mongoose.Schema({
     images : {
         type : [String],
         default : []
+    },
+    userID : {
+        type : mongoose.Schema.Types.ObjectId,
+        ref : 'User',
+        required : [true , "Gig must have a user ID"]
     }
 })
 

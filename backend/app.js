@@ -16,7 +16,6 @@ app.use(express.json())
 
 app.use((req , res , next) => {
     console.log("App Running in -->" , process.env.NODE_ENV)
-    console.log(req.headers)
     req.requestTime = new Date().toISOString();
     next()
 })
