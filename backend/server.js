@@ -6,6 +6,7 @@ dotenv.config({
   path: "./config.env"
 })
 
+
 process.on('unhandledRejection', err => {
   console.log("UNCAUGHT REJECTION ....... ");
   console.error(err.name, err.message);
@@ -21,10 +22,6 @@ const DB = process.env.DATABASE.replace(
 mongoose.connect(DB, {
 }).then(() => {
   console.log("DB connection successful !")
-})
-
-app.get('/', (req, res) => {
-  res.send('GG - Server Running')
 })
 
 
