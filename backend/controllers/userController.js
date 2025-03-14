@@ -1,0 +1,145 @@
+
+const User = require("../models/user")
+const { default: mongoose } = require("mongoose")
+const { getBucket } = require("../utils/gridfs");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+
+const userController = {
+    uploadPfp: async (req, res) => {
+        try {
+            const userId = req.params.userid;
+            const file = req.file;
+
+            if (!file) return res.status(400).send("No file uploaded");
+
+            const user = await User.findById(userId);
+            if (!user) return res.status(404).json({ message: "User not found" });
+
+
+
+            if (user.pfp?.fileId) {
+                const oldFileId = user.pfp.fileId;
+
+                if (mongoose.Types.ObjectId.isValid(oldFileId)) {
+                    try {
+                        const bucket = getBucket();
+                        await bucket.delete(oldFileId);
+                    } catch (err) {
+                    }
+                } else {
+                    console.warn("Skipping deletion: Invalid ObjectId for old file:", oldFileId);
+                }
+
+            }
+
+
+            user.pfp = {
+                filename: file.filename,
+                fileId: mongoose.Types.ObjectId.isValid(file.id)
+                    ? new mongoose.Types.ObjectId(file.id.toString())
+                    : file.id,
+            };
+
+            const updatedUser = await user.save({ validateBeforeSave: false });
+
+            return res.status(200).json({
+                message: "Profile picture uploaded and updated!",
+                user: updatedUser,
+            });
+
+        } catch (err) {
+            console.error("Upload error:", err);
+            return res.status(500).send("Upload failed");
+        }
+    },
+    getPfp: async (req, res) => {
+        try {
+            const userid = req.params.userid;
+
+            const user = await User.findById(userid);
+            if (!user || !user.pfp || !user.pfp.fileId) {
+                return res.status(404).send("Profile picture not found");
+            }
+
+            const fileId = new mongoose.Types.ObjectId(user.pfp.fileId);
+
+            const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+                bucketName: "newBucket",
+            });
+
+            const downloadStream = bucket.openDownloadStream(fileId);
+
+            downloadStream.on("error", (err) => {
+                console.error("Download stream error:", err);
+                return res.status(404).send("Could not retrieve image");
+            });
+
+            res.set("Content-Type", "image/jpeg");
+
+            downloadStream.pipe(res);
+
+        } catch (err) {
+            console.error("PFP Error:", err);
+            res.status(500).send("Internal Server Error");
+        }
+    },
+    updateUser: async (req, res, next) => {
+        const { userId, name, email, password, passwordConfirm } = req.body;
+
+        try {
+            // Find the user by ID
+            const existingUser = await User.findById(userId);
+            if (!existingUser) {
+                return res.status(404).json({
+                    status: "fail",
+                    message: "User not found",
+                });
+            }
+
+            if (password) {
+                if (password !== passwordConfirm) {
+                    return res.status(400).json({
+                        status: "fail",
+                        message: "Passwords do not match",
+                    });
+                }
+
+                existingUser.password = await bcrypt.hash(password, 12);
+            }
+
+            if (name) existingUser.name = name;
+
+            const updatedUser = await existingUser.save();
+
+            if (password) {
+                const token = jwt.sign({ id: updatedUser._id }, "your_jwt_secret", {
+                    expiresIn: "7d",
+                });
+                res.status(200).json({
+                    status: "success",
+                    token,
+                    data: {
+                        user: updatedUser,
+                    },
+                });
+            } else {
+                res.status(200).json({
+                    status: "success",
+                    data: {
+                        user: updatedUser,
+                    },
+                });
+            }
+        } catch (err) {
+            console.log(err.message);
+            res.status(400).json({
+                status: "fail",
+                message: "Something went wrong",
+            });
+        }
+    },
+};
+
+
+module.exports = userController;

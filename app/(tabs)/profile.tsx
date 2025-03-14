@@ -3,22 +3,58 @@ import { useAuth } from "@/components/AuthContext"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
 import { Ionicons } from "@expo/vector-icons"
+import { router } from "expo-router"
+import { useState } from "react"
+import { getUserPFP } from "@/hooks/getUserPfp"
+import { Image, ActivityIndicator } from "react-native"
+import { useFocusEffect } from "expo-router"; // or from @react-navigation/native
+import React from "react"
+
+
 
 const Profile = () => {
   const { user, signOut } = useAuth()
+  const [image, setImage] = useState<string | null>(getUserPFP(user?.id, true));
+  const [loading, setLoading] = useState(false);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      setImage(getUserPFP(user?.id, true));
+    }, [user?.id])
+  );
+
+  console.log("re fetch", image);
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.profileImageContainer}>
-          <Ionicons name="person-circle" size={100} color="#4B7172" />
+          {image ? (
+            <View className="w-32 h-32 rounded-full items-center justify-center relative">
+              {loading && (
+                <View className="absolute w-32 h-32 rounded-full items-center justify-center bg-black/30 z-10">
+                  <ActivityIndicator size="large" color="#fff" />
+                </View>
+              )}
+              <Image
+                source={{ uri: image }}
+                className="w-32 h-32 rounded-full"
+                onLoadStart={() => setLoading(true)}
+                onLoadEnd={() => setLoading(false)}
+                onError={() => setLoading(false)} // Optional: hide loader on error too
+              />
+            </View>
+          ) : (
+            <View className="w-32 h-32 rounded-full bg-gray-700 items-center justify-center">
+              <Ionicons name="person" size={64} color="#4B7172" />
+            </View>
+          )}
         </View>
         <ThemedText style={styles.name}>{user?.name || "User"}</ThemedText>
         <ThemedText style={styles.email}>{user?.email || "user@example.com"}</ThemedText>
       </View>
 
       <View style={styles.menuContainer}>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/editProfile')}>
           <Ionicons name="person-outline" size={24} color="#fff" />
           <ThemedText style={styles.menuText}>Edit Profile</ThemedText>
         </TouchableOpacity>

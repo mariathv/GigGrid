@@ -23,6 +23,17 @@ mongoose.connect(DB, {
   console.log("DB connection successful !")
 })
 
+let bucket;
+mongoose.connection.on("connected", () => {
+  var db = mongoose.connections[0].db;
+  bucket = new mongoose.mongo.GridFSBucket(db, {
+    bucketName: "newBucket"
+  });
+  console.log(bucket);
+});
+
+
+
 app.get('/', (req, res) => {
   res.send('GG - Server Running')
 })

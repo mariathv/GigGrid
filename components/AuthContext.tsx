@@ -8,7 +8,7 @@ import { apiRequest } from "@/hooks/api/api-gg"
 
 // Storage keys
 const AUTH_TOKEN_KEY = "auth_token"
-const USER_DATA_KEY = "user_data"
+export const USER_DATA_KEY = "user_data"
 
 type User = {
   id: string
@@ -30,7 +30,7 @@ const AuthContext = createContext<AuthState>({
   user: null,
   signIn: async () => false,
   signUp: async () => false,
-  signOut: () => {},
+  signOut: () => { },
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
