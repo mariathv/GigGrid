@@ -11,3 +11,13 @@ export const addGig = async (gigData: GigData) => {
         throw error;
     }
 };
+
+export const getMyGigs = async () => {
+    try {
+        const response = await api.get('/gigs');
+        return response.data;
+    } catch (error: any) {
+        console.error('get gigs failed:', error?.response?.data || error.message);
+        throw error;
+    }
+}

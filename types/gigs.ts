@@ -10,6 +10,7 @@ export interface PackageData {
 }
 
 export interface GigData {
+    _id: string;
     title: string;
     description: string;
     category: string;
@@ -17,4 +18,8 @@ export interface GigData {
     basic: PackageData;
     standard: PackageData;
     premium: PackageData;
+    orders: number;
+    rating: number;
+    isActive: boolean;
+    createdAt: Date;
 }

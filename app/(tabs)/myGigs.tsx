@@ -4,11 +4,13 @@ import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
-import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
+import { ThemedText } from "@/components/ThemedText"
 import GigCard from "@/components/GigCard"
 import { StatusBar } from "expo-status-bar"
 import "@/global.css"
+import { getMyGigs } from "@/api/gigs"
+import { GigData } from "@/types/gigs"
 
 // Type definitions
 interface Gig {
@@ -59,23 +61,45 @@ export default function MyGigsScreen() {
     const [filter, setFilter] = useState<FilterOption>("all")
     const [sortBy, setSortBy] = useState<SortOption>("newest")
     const [showFilterModal, setShowFilterModal] = useState(false)
-    const [filteredGigs, setFilteredGigs] = useState<Gig[]>(myGigs)
+    const [filteredGigs, setFilteredGigs] = useState<GigData[]>([])
+    const [Gigs, setGigs] = useState<GigData[]>([])
     const router = useRouter()
+
+    useEffect(() => {
+        const fetchGigs = async () => {
+            try {
+                const response = await getMyGigs();
+
+                const gigsArray = Array.isArray(response?.data?.allGigs)
+                    ? response.data.allGigs
+                    : [];
+
+                setFilteredGigs(gigsArray);
+                setGigs(gigsArray);
+            } catch (error) {
+                console.error("Failed to fetch gigs", error);
+                setFilteredGigs([]);
+                setGigs([]);
+            }
+        };
+
+        fetchGigs();
+    }, []);
+
+
 
     useEffect(() => {
         setIsLoading(true)
 
         setTimeout(() => {
-            let result = [...myGigs]
+            let result = [...Gigs]
 
-            // Apply status filter
             if (filter === "active") {
                 result = result.filter(gig => gig.isActive)
             } else if (filter === "inactive") {
                 result = result.filter(gig => !gig.isActive)
             }
 
-            // Apply search
             if (searchQuery) {
                 const query = searchQuery.toLowerCase()
                 result = result.filter(
@@ -85,7 +109,6 @@ export default function MyGigsScreen() {
                 )
             }
 
-            // Apply sorting
             switch (sortBy) {
                 case "newest":
                     result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -107,15 +130,14 @@ export default function MyGigsScreen() {
     }, [searchQuery, filter, sortBy])
 
     const handleDeleteGig = (id: string) => {
-        setFilteredGigs(filteredGigs.filter(gig => gig.id !== id))
+        setFilteredGigs(filteredGigs.filter(gig => gig._id !== id))
     }
 
     const handleToggleStatus = (id: string) => {
         setFilteredGigs(filteredGigs.map(gig =>
-            gig.id === id ? { ...gig, isActive: !gig.isActive } : gig
+            gig._id === id ? { ...gig, isActive: !gig.isActive } : gig
         ))
     }
-
     return (
         <ThemedView className="flex-1">
             <StatusBar style="light" />
@@ -137,16 +159,16 @@ export default function MyGigsScreen() {
                 {/* Stats Bar */}
                 <View className="flex-row justify-between mx-5 mb-6">
                     <View className="bg-[#111] p-3 rounded-lg flex-1 mr-2 items-center">
-                        <ThemedText className="text-lg font-bold">{filteredGigs.length}</ThemedText>
-                        <ThemedText className="text-xs text-gray-400">Total Gigs</ThemedText>
+                        <Text className="text-lg font-bold text-white">{filteredGigs.length}</Text>
+                        <Text className="text-xs text-gray-400">Total Gigs</Text>
                     </View>
                     <View className="bg-[#111] p-3 rounded-lg flex-1 mx-2 items-center">
-                        <ThemedText className="text-lg font-bold">{filteredGigs.filter(g => g.isActive).length}</ThemedText>
-                        <ThemedText className="text-xs text-gray-400">Active</ThemedText>
+                        <Text className="text-lg font-bold  text-white">{filteredGigs.filter(g => g.isActive).length}</Text>
+                        <Text className="text-xs text-gray-400">Active</Text>
                     </View>
                     <View className="bg-[#111] p-3 rounded-lg flex-1 ml-2 items-center">
-                        <ThemedText className="text-lg font-bold">{filteredGigs.filter(g => !g.isActive).length}</ThemedText>
-                        <ThemedText className="text-xs text-gray-400">Inactive</ThemedText>
+                        <Text className="text-lg font-bold  text-white">{filteredGigs.filter(g => !g.isActive).length}</Text>
+                        <Text className="text-xs text-gray-400">Inactive</Text>
                     </View>
                 </View>
 
@@ -166,59 +188,58 @@ export default function MyGigsScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Filter Options */}
                     {showFilterModal && (
                         <View className="bg-[#111] rounded-lg p-4 mb-4">
                             <View className="mb-4">
-                                <ThemedText className="text-sm font-semibold mb-2">Status</ThemedText>
+                                <Text className="text-sm font-semibold mb-2 text-[#CFD5D5]">Status</Text>
                                 <View className="flex-row">
                                     <TouchableOpacity
                                         className={`py-1 px-3 rounded-full mr-2 ${filter === 'all' ? 'bg-[#4B7172]' : 'bg-[#222]'}`}
                                         onPress={() => setFilter('all')}
                                     >
-                                        <ThemedText className={`text-sm ${filter === 'all' ? 'text-white' : 'text-gray-400'}`}>All</ThemedText>
+                                        <Text className={`text-sm ${filter === 'all' ? 'text-white' : 'text-gray-400'}`}>All</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         className={`py-1 px-3 rounded-full mr-2 ${filter === 'active' ? 'bg-[#4B7172]' : 'bg-[#222]'}`}
                                         onPress={() => setFilter('active')}
                                     >
-                                        <ThemedText className={`text-sm ${filter === 'active' ? 'text-white' : 'text-gray-400'}`}>Active</ThemedText>
+                                        <Text className={`text-sm ${filter === 'active' ? 'text-white' : 'text-gray-400'}`}>Active</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         className={`py-1 px-3 rounded-full ${filter === 'inactive' ? 'bg-[#4B7172]' : 'bg-[#222]'}`}
                                         onPress={() => setFilter('inactive')}
                                     >
-                                        <ThemedText className={`text-sm ${filter === 'inactive' ? 'text-white' : 'text-gray-400'}`}>Inactive</ThemedText>
+                                        <Text className={`text-sm ${filter === 'inactive' ? 'text-white' : 'text-gray-400'}`}>Inactive</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             <View>
-                                <ThemedText className="text-sm font-semibold mb-2">Sort By</ThemedText>
+                                <Text className="text-sm font-semibold mb-2">Sort By</Text>
                                 <View className="flex-row flex-wrap">
                                     <TouchableOpacity
                                         className={`py-1 px-3 rounded-full mr-2 mb-2 ${sortBy === 'newest' ? 'bg-[#4B7172]' : 'bg-[#222]'}`}
                                         onPress={() => setSortBy('newest')}
                                     >
-                                        <ThemedText className={`text-sm ${sortBy === 'newest' ? 'text-white' : 'text-gray-400'}`}>Newest</ThemedText>
+                                        <Text className={`text-sm ${sortBy === 'newest' ? 'text-white' : 'text-gray-400'}`}>Newest</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         className={`py-1 px-3 rounded-full mr-2 mb-2 ${sortBy === 'oldest' ? 'bg-[#4B7172]' : 'bg-[#222]'}`}
                                         onPress={() => setSortBy('oldest')}
                                     >
-                                        <ThemedText className={`text-sm ${sortBy === 'oldest' ? 'text-white' : 'text-gray-400'}`}>Oldest</ThemedText>
+                                        <Text className={`text-sm ${sortBy === 'oldest' ? 'text-white' : 'text-gray-400'}`}>Oldest</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         className={`py-1 px-3 rounded-full mr-2 mb-2 ${sortBy === 'highest_rated' ? 'bg-[#4B7172]' : 'bg-[#222]'}`}
                                         onPress={() => setSortBy('highest_rated')}
                                     >
-                                        <ThemedText className={`text-sm ${sortBy === 'highest_rated' ? 'text-white' : 'text-gray-400'}`}>Highest Rated</ThemedText>
+                                        <Text className={`text-sm ${sortBy === 'highest_rated' ? 'text-white' : 'text-gray-400'}`}>Highest Rated</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         className={`py-1 px-3 rounded-full mr-2 mb-2 ${sortBy === 'most_orders' ? 'bg-[#4B7172]' : 'bg-[#222]'}`}
                                         onPress={() => setSortBy('most_orders')}
                                     >
-                                        <ThemedText className={`text-sm ${sortBy === 'most_orders' ? 'text-white' : 'text-gray-400'}`}>Most Orders</ThemedText>
+                                        <Text className={`text-sm ${sortBy === 'most_orders' ? 'text-white' : 'text-gray-400'}`}>Most Orders</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -231,38 +252,40 @@ export default function MyGigsScreen() {
                     {isLoading ? (
                         <View className="items-center justify-center py-10">
                             <ActivityIndicator size="large" color="#4B7172" />
-                            <ThemedText className="mt-2 text-gray-400">Loading your gigs...</ThemedText>
+                            <Text className="mt-2 text-gray-400">Loading your gigs...</Text>
                         </View>
                     ) : filteredGigs.length > 0 ? (
                         filteredGigs.map(gig => (
-                            <View key={gig.id} className="bg-[#111] rounded-lg mb-4 overflow-hidden">
+                            <View key={gig._id} className="bg-[#111] rounded-lg mb-4 overflow-hidden">
+
                                 <View className="flex-row">
-                                    <View className="w-[100] h-[100] relative">
+                                    <View className="w-[20] h-[100] relative">
                                         <View
                                             className={`absolute top-2 left-2 w-2.5 h-2.5 rounded-full z-10 ${gig.isActive ? 'bg-green-500' : 'bg-red-500'}`}
                                         />
+                                        {/* change w to 100 if doing so 
                                         <Image
                                             source={{ uri: gig.image }}
                                             className="w-full h-full"
                                             style={{ resizeMode: 'cover' }}
-                                        />
+                                        /> */}
                                     </View>
                                     <View className="flex-1 p-3 justify-between">
                                         <View>
-                                            <ThemedText className="text-base font-bold mb-1" numberOfLines={1}>{gig.title}</ThemedText>
-                                            <ThemedText className="text-xs text-gray-400 mb-2">{gig.category}</ThemedText>
+                                            <Text className="text-base text-white font-bold mb-1" numberOfLines={1}>{gig.title}</Text>
+                                            <Text className="text-xs text-gray-400 mb-2">{gig.category}</Text>
                                             <View className="flex-row mb-2">
                                                 <View className="flex-row items-center mr-4">
                                                     <Ionicons name="star" size={14} color="#FFD700" />
-                                                    <ThemedText className="text-xs text-gray-400 ml-1">{gig.rating}</ThemedText>
+                                                    <Text className="text-xs text-gray-400 ml-1">{gig.rating}</Text>
                                                 </View>
                                                 <View className="flex-row items-center">
                                                     <Ionicons name="cart-outline" size={14} color="#777" />
-                                                    <ThemedText className="text-xs text-gray-400 ml-1">{gig.orders} orders</ThemedText>
+                                                    <Text className="text-xs text-gray-400 ml-1">{gig.orders} orders</Text>
                                                 </View>
                                             </View>
                                         </View>
-                                        <ThemedText className="text-base font-bold text-[#4B7172]">{gig.price}</ThemedText>
+                                        <Text className="text-base font-bold text-[#85B8AF]">From ${gig.basic.price}</Text>
                                     </View>
                                 </View>
 
@@ -272,39 +295,39 @@ export default function MyGigsScreen() {
                                         className="flex-1 flex-row justify-center items-center py-2"
                                         onPress={() => router.push({
                                             pathname: "/(modals)/editGig",
-                                            params: { id: gig.id }
+                                            params: { id: gig._id }
                                         })}
                                     >
                                         <Ionicons name="create-outline" size={16} color="#4B7172" />
-                                        <ThemedText className="text-sm text-[#4B7172] ml-1">Edit</ThemedText>
+                                        <Text className="text-sm text-[#4B7172] ml-1">Edit</Text>
                                     </TouchableOpacity>
 
                                     <View className="w-px bg-[#222] mx-2" />
 
                                     <TouchableOpacity
                                         className="flex-1 flex-row justify-center items-center py-2"
-                                        onPress={() => handleToggleStatus(gig.id)}
+                                        onPress={() => handleToggleStatus(gig._id)}
                                     >
                                         <Ionicons
                                             name={gig.isActive ? "eye-off-outline" : "eye-outline"}
                                             size={16}
                                             color={gig.isActive ? "#FF9500" : "#4B7172"}
                                         />
-                                        <ThemedText
+                                        <Text
                                             className={`text-sm ml-1 ${gig.isActive ? 'text-[#FF9500]' : 'text-[#4B7172]'}`}
                                         >
                                             {gig.isActive ? "Deactivate" : "Activate"}
-                                        </ThemedText>
+                                        </Text>
                                     </TouchableOpacity>
 
                                     <View className="w-px bg-[#222] mx-2" />
 
                                     <TouchableOpacity
                                         className="flex-1 flex-row justify-center items-center py-2"
-                                        onPress={() => handleDeleteGig(gig.id)}
+                                        onPress={() => handleDeleteGig(gig._id)}
                                     >
                                         <Ionicons name="trash-outline" size={16} color="#FF3B30" />
-                                        <ThemedText className="text-sm text-[#FF3B30] ml-1">Delete</ThemedText>
+                                        <Text className="text-sm text-[#FF3B30] ml-1">Delete</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -312,10 +335,10 @@ export default function MyGigsScreen() {
                     ) : (
                         <View className="items-center justify-center py-10">
                             <Ionicons name="search" size={50} color="#333" />
-                            <ThemedText className="mt-4 text-lg font-semibold">No gigs found</ThemedText>
-                            <ThemedText className="mt-2 text-gray-400 text-center">
+                            <Text className="mt-4 text-lg font-semibold">No gigs found</Text>
+                            <Text className="mt-2 text-gray-400 text-center">
                                 We couldn't find any gigs matching your search criteria.
-                            </ThemedText>
+                            </Text>
                             <TouchableOpacity
                                 className="mt-6 bg-[#4B7172] py-3 px-6 rounded-lg"
                                 onPress={() => {
@@ -325,14 +348,14 @@ export default function MyGigsScreen() {
                                     setShowFilterModal(false)
                                 }}
                             >
-                                <ThemedText className="text-white font-semibold">Clear Filters</ThemedText>
+                                <Text className="text-white font-semibold">Clear Filters</Text>
                             </TouchableOpacity>
                         </View>
                     )}
                 </View>
 
                 {/* Create New Gig Button (Fixed at bottom) */}
-                <View className="h-20" />
+                < View className="h-20" />
             </ScrollView>
 
             {/* Floating Action Button */}

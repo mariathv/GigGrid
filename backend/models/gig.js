@@ -29,52 +29,68 @@ const packageSchema = new mongoose.Schema({
 
 });
 
-const gigSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: [true, "A gig must have a title"]
+const gigSchema = new mongoose.Schema(
+    {
+        title: {
+            type: String,
+            required: [true, "A gig must have a title"],
+        },
+        slug: String,
+        description: {
+            type: String,
+            required: [true, "A gig must have a description"],
+            maxlength: 1000,
+            minlength: 50,
+        },
+        category: {
+            type: String,
+            enum: [
+                "Graphic Design",
+                "Writing",
+                "Web Development",
+                "Mobile Development",
+                "Digital Marketing",
+                "Video Editing",
+            ],
+            default: "None",
+        },
+        tags: {
+            type: [String],
+            default: [],
+        },
+        basic: {
+            type: packageSchema,
+            required: [true, "Basic package is required"],
+        },
+        standard: {
+            type: packageSchema,
+            required: [true, "Standard package is required"],
+        },
+        premium: {
+            type: packageSchema,
+            required: [true, "Premium package is required"],
+        },
+        images: {
+            type: [String],
+            default: [],
+        },
+        orders: {
+            type: Number,
+            default: 0,
+        },
+        rating: {
+            type: Number,
+            default: 0,
+        },
+        isActive: {
+            type: Boolean,
+            default: true,
+        },
     },
-    slug: String,
-    description: {
-        type: String,
-        required: [true, "A gig must have a description"],
-        maxlength: 1000,
-        minlength: 50
-    },
-    category: {
-        type: String,
-        enum: ["Graphic Design", "Writing", "Web Development", "Mobile Development", "Digital Marketing", "Video Editing"],
-        default: "None"
-    },
-    tags: {
-        type: [String],
-        default: []
-    },
-    basic: {
-        type: packageSchema,
-        required: [true, "Basic package is required"]
-    },
-    standard: {
-        type: packageSchema,
-        required: [true, "Standard package is required"]
-    },
-    premium: {
-        type: packageSchema,
-        required: [true, "Premium package is required"]
-    },
-    images: {
-        type: [String],
-        default: []
-    },
-    orders: {
-        type: Number,
-        default: 0
-    },
-    rating: {
-        type: Number,
-        default: 0
+    {
+        timestamps: true,
     }
-})
+);
 
 gigSchema.pre("save", function (next) {
     this.slug = slugify(this.title, { lower: true })
