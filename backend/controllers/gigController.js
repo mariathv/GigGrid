@@ -29,11 +29,23 @@ exports.getAllGigs = catchAsync (async (req , res , next) => {
     });
 })
 
+exports.getMyGigs = catchAsync(async (req , res , next) => {
+    const myGigs = await gig.find({ userID: req.user._id });
+
+    res.status(200).json({
+        status: "success",
+        requestedAt: req.requestTime,
+        data: {
+            myGigs
+        }
+    });
+})
+
 exports.getGig = catchAsync (async (req , res , next) => {
     const thisGig = await gig.findById(req.params.id);
 
     if(!thisGig) {
-        return next(new AppError("No account found with that ID"));
+        return next(new AppError("No account found with that ID" , 404));
     }
 
     res.status(200).json({
@@ -50,11 +62,11 @@ exports.updateGig = catchAsync (async (req , res , next) => {
     const thisGig = await gig.findById(req.params.id);
 
     if(!thisGig) {
-        return next(new AppError("No account found with that ID"));
+        return next(new AppError("No account found with that ID" , 404));
     }
 
     if(thisGig.userID != req.user._id) {
-        return next(new AppError("Dont do this 😒" , 401))
+        return next(new AppError("You do not have permission to perform this action" , 401))
     }
 
     thisGig = await gig.findByIdAndUpdate(req.params.id , req.body , {
@@ -74,11 +86,8 @@ exports.updateGig = catchAsync (async (req , res , next) => {
 exports.deleteGig = catchAsync (async (req , res , next) => {
     let thisGig = await gig.findById(req.params.id);
 
-    console.log("user ID -> " , req.user._id)
-    console.log("gig user ID => " , )
-
     if(!thisGig) {
-        return next(new AppError("No account found with that ID"));
+        return next(new AppError("No account found with that ID" , 404));
     }
 
     if(!thisGig.userID.equals(req.user._id)) {
