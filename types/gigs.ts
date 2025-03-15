@@ -1,6 +1,7 @@
 export type PackageType = 'basic' | 'standard' | 'premium';
 
 export interface PackageData {
+    type: string;
     title: string;
     description: string;
     price: number;

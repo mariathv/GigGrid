@@ -23,7 +23,8 @@ const Profile = () => {
     }, [user?.id])
   );
 
-  console.log("re fetch", image);
+
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>

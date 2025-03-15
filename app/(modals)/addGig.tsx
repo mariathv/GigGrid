@@ -158,7 +158,7 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
 
 
 
-            const gigData: GigData = {
+            const gigData = {
                 title,
                 description,
                 category: categoryName,
@@ -166,10 +166,8 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
                 basic: mapPackage(packages.basic),
                 standard: mapPackage(packages.standard),
                 premium: mapPackage(packages.premium)
-            };
+            } as GigData;
 
-
-            console.log(gigData);
 
             try {
                 const response = await addGig(gigData);

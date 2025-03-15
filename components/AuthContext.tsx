@@ -5,6 +5,7 @@ import { createContext, useState, useContext, useEffect } from "react"
 import { useRouter, useSegments } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { apiRequest } from "@/hooks/api/api-gg"
+import { setGlobalAuthToken } from "@/api"
 
 // Storage keys
 const AUTH_TOKEN_KEY = "auth_token"
@@ -20,23 +21,30 @@ type User = {
 type AuthState = {
   isAuthenticated: boolean
   user: User | null
+  token: string | null // ← add this
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>
   signUp: (name: string, email: string, password: string, confirmPassword: string, userType: string) => Promise<boolean>
   signOut: () => void
+  updateUserData: (newUser: Partial<User>) => Promise<void>
 }
+
 
 const AuthContext = createContext<AuthState>({
   isAuthenticated: false,
   user: null,
+  token: null, // ✅ Add this line
   signIn: async () => false,
   signUp: async () => false,
   signOut: () => { },
+  updateUserData: async () => { },
 })
+
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter()
   const segments = useSegments()
 
@@ -62,9 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkToken()
   }, [])
 
-  // Handle navigation based on auth state
   useEffect(() => {
-    if (isLoading) return // Don't redirect while checking auth state
+    if (isLoading) return
 
     const inAuthGroup =
       segments[0] === "(modals)" &&
@@ -79,10 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string, rememberMe = false) => {
     try {
-      const requestBody = {
-        email,
-        password,
-      }
+      const requestBody = { email, password }
 
       const response = await apiRequest<{
         status: string
@@ -97,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token?: string
       }>("auth/login", requestBody, "POST", 20000)
 
-      if (response.status && response.data?.user) {
+      if (response.status && response.data?.user && response.token) {
         const userData: User = {
           id: response.data.user._id,
           email: response.data.user.email,
@@ -105,14 +109,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userType: response.data.user.userType,
         }
 
-        // Store token and user data if remember me is checked
-        if (rememberMe && response.token) {
+        setUser(userData)
+        setToken(response.token)
+        setGlobalAuthToken(response.token)
+        setIsAuthenticated(true)
+
+        if (rememberMe) {
           await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token)
           await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData))
         }
 
-        setUser(userData)
-        setIsAuthenticated(true)
         return true
       } else {
         throw new Error("Sign in failed")
@@ -122,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false
     }
   }
+
 
   const signUp = async (name: string, email: string, password: string, passwordConfirm: string, userType: string) => {
     try {
@@ -172,14 +179,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Sign out function
+  const updateUserData = async (newUser: Partial<User>) => {
+
+    if (!user) return;
+    const updatedUser = { ...user, ...newUser };
+    setUser(updatedUser);
+
+    await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
+  }
+
+
   const signOut = async () => {
     try {
       // Clear stored token and user data
       await AsyncStorage.removeItem(AUTH_TOKEN_KEY)
       await AsyncStorage.removeItem(USER_DATA_KEY)
 
+      setToken(null)
       setUser(null)
+      setGlobalAuthToken(null)
       setIsAuthenticated(false)
       router.replace("/login")
     } catch (error) {
@@ -188,9 +206,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, signIn, signUp, signOut, updateUserData, token }}
+    >
+      {children}
+    </AuthContext.Provider>
   )
 }
 
 export const useAuth = () => useContext(AuthContext)
+
+/*
+
+  create context for user image too with cache busting -> hamdan will do this
+  steps:
+    on image change -> save that image url with cache busted to context
+    -> use that image then to load pfp eveywhere unless updated again
+    this will result in literally 0s delay when loading image
+
+*/
 

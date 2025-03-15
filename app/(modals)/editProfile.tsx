@@ -14,6 +14,7 @@ import mime from "mime"
 import { axiosRequest } from "@/hooks/api/api-axiosreq"
 import { getUserPFP } from "@/hooks/getUserPfp"
 import { apiRequest } from "@/hooks/api/api-gg"
+import { updateUser } from "@/api/user"
 
 export default function EditProfileScreen() {
     const { user } = useAuth()
@@ -23,6 +24,7 @@ export default function EditProfileScreen() {
     const [isLoading, setIsLoading] = useState(false)
     const [isImageChanged, setimgChanged] = useState(false);
 
+    const { updateUserData } = useAuth()
 
 
 
@@ -63,14 +65,15 @@ export default function EditProfileScreen() {
                 setImage(getUserPFP(user?.id, true))
             }
 
-            // if (name && name !== user?.name) {
-            //     const success = await updateUser({ name })
-            //     if (success) {
-            //         console.log("Name updated successfully")
-            //     } else {
-            //         console.warn("Failed to update name")
-            //     }
-            // }
+            if (name && name !== user?.name) {
+                const success = await updateUser(name)
+                if (success) {
+                    console.log("Name updated successfully")
+                    await updateUserData({ name })
+                } else {
+                    console.warn("Failed to update name")
+                }
+            }
 
             setTimeout(() => {
                 setIsLoading(false)
@@ -81,6 +84,8 @@ export default function EditProfileScreen() {
             setIsLoading(false)
         }
     }
+
+    console.log("img", image)
 
     const handleImagePick = async () => {
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()

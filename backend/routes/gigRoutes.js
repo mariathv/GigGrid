@@ -14,6 +14,8 @@ router
 
 router.route("/").get(gigController.getAllGigs);
 
+router.route("/update/:id").post(authController.protect, authController.restrictTo("Freelancer"), gigController.updateGig)
+
 router
   .route("/add")
   .post(

@@ -9,12 +9,17 @@ const api = axios.create({
     timeout: 10000,
 });
 
+let latestToken: string | null = null;
+
+export const setGlobalAuthToken = (token: string | null) => {
+    latestToken = token;
+};
+
 api.interceptors.request.use(
     async (config) => {
-        const token = await AsyncStorage.getItem('auth_token');
-        console.log(token);
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        const tokenToUse = latestToken || await AsyncStorage.getItem('auth_token');
+        if (tokenToUse) {
+            config.headers.Authorization = `Bearer ${tokenToUse}`;
         }
         return config;
     },

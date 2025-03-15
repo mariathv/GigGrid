@@ -6,21 +6,13 @@ import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
+import { GigData } from "@/types/gigs"
 
 interface GigCardProps {
-    gig: Gig;
+    gig: GigData;
 }
 
-interface Gig {
-    id: string;
-    title: string;
-    category: string;
-    price: string;
-    rating: number;
-    orders: number;
-    image: string;
-    isActive: boolean;
-}
+
 
 const GigCard = ({ gig }: GigCardProps) => {
     const router = useRouter()
@@ -29,10 +21,6 @@ const GigCard = ({ gig }: GigCardProps) => {
         <TouchableOpacity style={styles.gigCard}>
             <View style={styles.gigImageContainer}>
                 <View style={[styles.statusIndicator, { backgroundColor: gig.isActive ? "#4CAF50" : "#FFA000" }]} />
-                <Image
-                    source={{ uri: gig.image || "/placeholder.svg?height=100&width=100" }}
-                    style={styles.gigImage}
-                />
             </View>
             <View style={styles.gigContent}>
                 <ThemedText style={styles.gigTitle} numberOfLines={2}>{gig.title}</ThemedText>
@@ -49,7 +37,7 @@ const GigCard = ({ gig }: GigCardProps) => {
                     </View>
                 </View>
 
-                <ThemedText style={styles.gigPrice}>{gig.price}</ThemedText>
+                <ThemedText style={styles.gigPrice}>From ${gig.basic.price}</ThemedText>
             </View>
         </TouchableOpacity>
     )
@@ -212,7 +200,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
     gigImageContainer: {
-        width: 100,
+        width: 20,
         height: 100,
         position: "relative",
     },

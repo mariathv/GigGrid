@@ -1,26 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image } from "react-native"
+import { useEffect, useState } from "react"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
 import GigCard from "@/components/GigCard"
 import OrderItemCard from "@/components/OrderItem"
+import { GigData } from "@/types/gigs"
 import "@/global.css"
+import { getMyGigs } from "@/api/gigs"
 
-// Type definitions
-interface Gig {
-  id: string;
-  title: string;
-  category: string;
-  price: string;
-  rating: number;
-  orders: number;
-  image: string;
-  isActive: boolean;
-}
+
 
 interface OrderItem {
   id: string;
@@ -34,39 +26,9 @@ interface OrderItem {
 
 
 
-// Mock data for the UI
-const myGigs: Gig[] = [
-  {
-    id: "1",
-    title: "Professional Mobile App Development",
-    category: "Programming & Tech",
-    price: "From $150",
-    rating: 4.8,
-    orders: 24,
-    image: "/placeholder.svg",
-    isActive: true,
-  },
-  {
-    id: "2",
-    title: "Modern UI/UX Design for Web & Mobile",
-    category: "Graphics & Design",
-    price: "From $120",
-    rating: 4.9,
-    orders: 18,
-    image: "/placeholder.svg",
-    isActive: true,
-  },
-  {
-    id: "3",
-    title: "SEO-Optimized Content Writing",
-    category: "Writing & Translation",
-    price: "From $50",
-    rating: 4.7,
-    orders: 32,
-    image: "/placeholder.svg",
-    isActive: false,
-  },
-]
+
+
+
 
 const recentOrders: OrderItem[] = [
   {
@@ -100,7 +62,34 @@ const recentOrders: OrderItem[] = [
 
 
 export default function HomeScreen() {
-  const [searchQuery, setSearchQuery] = useState("")
+
+  const [myGigs, setGigs] = useState<GigData[]>([])
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchGigs = async () => {
+      try {
+        const response = await getMyGigs();
+
+        const gigsArray = Array.isArray(response?.data?.myGigs)
+          ? response.data.myGigs
+          : [];
+
+        setGigs(gigsArray);
+      } catch (error) {
+        console.error("Failed to fetch gigs", error);
+
+        setGigs([]);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchGigs();
+  }, []);
+
+
   const router = useRouter()
 
   return (
@@ -176,23 +165,25 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.searchContainer}>
-            <Ionicons name="search-outline" size={20} color="#777" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search your gigs..."
-              placeholderTextColor="#777"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.filterButton}>
-              <Ionicons name="options-outline" size={20} color="#4B7172" />
-            </TouchableOpacity>
-          </View>
+          {isLoading || initialLoading ? (
+            <View className="items-center justify-center py-10">
+              <ActivityIndicator size="large" color="#4B7172" />
+              <Text className="mt-2 text-gray-400">Loading your gigs...</Text>
+            </View>
+          ) : myGigs.length > 0 ? (
+            myGigs.slice(0, 3).map(gig => (
+              <GigCard key={gig._id} gig={gig} />
+            ))
+          ) : (
+            <View className="items-center justify-center py-10">
+              <Ionicons name="search" size={50} color="#333" />
+              <Text className="mt-4 text-lg font-semibold text-white">No gigs found</Text>
+              <Text className="mt-2 text-gray-400 text-center">
+                We couldn't find any gigs matching your search criteria.
+              </Text>
+            </View>
+          )}
 
-          {myGigs.map(gig => (
-            <GigCard key={gig.id} gig={gig} />
-          ))}
         </View>
 
         {/* Recent Orders Section */}
