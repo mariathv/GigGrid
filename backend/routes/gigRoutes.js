@@ -25,6 +25,11 @@ router
   );
 
 router
+  .route("/:id/reviews")
+  .get(authController.protect, gigController.getReviewsByGigID);
+
+
+router
   .route("/:id")
   .get(gigController.getGig)
   .patch(

@@ -90,6 +90,10 @@ const gigSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: [true, "Gig must have a user ID"]
+        },
+        minPrice: { 
+            type: Number, 
+            default: 0 
         }
     },
     {
@@ -99,6 +103,7 @@ const gigSchema = new mongoose.Schema(
 
 gigSchema.pre("save", function (next) {
     this.slug = slugify(this.title, { lower: true })
+    this.minPrice = Math.min(this.basic.price, this.standard.price, this.premium.price);
     next()
 })
 

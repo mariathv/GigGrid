@@ -5,6 +5,8 @@ const globalErrorController = require("./controllers/errorController");
 
 const userRouter = require("./routes/userRoutes");
 const gigRouter = require("./routes/gigRoutes");
+const orderRouter = require("./routes/orderRoutes")
+const reviewRouter = require("./routes/reviewRoutes")
 
 const app = express();
 
@@ -23,6 +25,8 @@ app.use((req , res , next) => {
 //Routes
 app.use("/api", userRouter);
 app.use("/api/gigs", gigRouter);
+app.use("/api/orders", orderRouter);
+app.use("/api/reviews" , reviewRouter);
 
 app.all("*" , (req , res , next) => {
     next(new AppError(`Can't find ${req.originalUrl} on the server` , 404));
