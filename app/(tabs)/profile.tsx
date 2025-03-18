@@ -9,6 +9,7 @@ import { getUserPFP } from "@/hooks/getUserPfp"
 import { Image, ActivityIndicator } from "react-native"
 import { useFocusEffect } from "expo-router"; // or from @react-navigation/native
 import React from "react"
+import { fetchUserPFP } from "@/api/user"
 
 
 
@@ -19,11 +20,9 @@ const Profile = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      setImage(getUserPFP(user?.id, true));
-    }, [user?.id])
-  );
-
-
+      setImage(getUserPFP(user?.id, true))
+    }, [user?.id]),
+  )
 
   return (
     <ThemedView style={styles.container}>
@@ -31,17 +30,10 @@ const Profile = () => {
         <View style={styles.profileImageContainer}>
           {image ? (
             <View className="w-32 h-32 rounded-full items-center justify-center relative">
-              {loading && (
-                <View className="absolute w-32 h-32 rounded-full items-center justify-center bg-black/30 z-10">
-                  <ActivityIndicator size="large" color="#fff" />
-                </View>
-              )}
+
               <Image
                 source={{ uri: image }}
                 className="w-32 h-32 rounded-full"
-                onLoadStart={() => setLoading(true)}
-                onLoadEnd={() => setLoading(false)}
-                onError={() => setLoading(false)} // Optional: hide loader on error too
               />
             </View>
           ) : (

@@ -90,17 +90,17 @@ const userController = {
         const { name } = req.body;
 
         if (!name) {
-            return next(new AppError("Name is required" , 400));
+            return next(new AppError("Name is required", 400));
         }
 
         const updatedUser = await User.findByIdAndUpdate(
             req.user._id,
-            {name},
-            {new : true , runValidators:true}
+            { name },
+            { new: true, runValidators: true }
         )
 
-        if(!updatedUser) {
-            return next(new AppError("User not found" , 400));
+        if (!updatedUser) {
+            return next(new AppError("User not found", 400));
         }
 
         res.status(200).json({
@@ -109,6 +109,26 @@ const userController = {
                 user: updatedUser
             }
         });
+    },
+    getUser: async (req, res, next) => {
+        try {
+            const userId = req.params.userid;
+
+            const user = await User.findById(userId).select("-password");
+            if (!user) {
+                return next(new AppError("User not found", 404));
+            }
+
+            res.status(200).json({
+                status: "success",
+                data: {
+                    user
+                }
+            });
+        } catch (err) {
+            console.error("Get user error:", err);
+            next(new AppError("Failed to fetch user", 500));
+        }
     },
 };
 
