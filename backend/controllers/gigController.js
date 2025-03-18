@@ -20,13 +20,18 @@ exports.addGig = catchAsync(async (req, res, next) => {
 })
 
 exports.getAllGigs = catchAsync(async (req, res, next) => {
-    const features = new APIFeatures(gig.find() , req.query).filter().sort()
+    const features = new APIFeatures(gig.find(), req.query)
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate();
+
     const allGigs = await features.query;
 
     res.status(200).json({
         status: "success",
         requestedAt: req.requestTime,
-        length : allGigs.length,
+        length: allGigs.length,
         data: {
             allGigs,
         },
@@ -39,7 +44,7 @@ exports.getMyGigs = catchAsync(async (req, res, next) => {
     res.status(200).json({
         status: "success",
         requestedAt: req.requestTime,
-        totalGigs : myGigs.length,
+        totalGigs: myGigs.length,
         data: {
             myGigs
         }
@@ -73,7 +78,7 @@ exports.updateGig = catchAsync(async (req, res, next) => {
         return next(new AppError("No account found with that ID", 404));
     }
 
-    
+
     if (thisGig.userID.toString() !== req.user._id.toString()) {
         return next(new AppError("You do not have permission to perform this action", 401));
     }
@@ -123,7 +128,12 @@ exports.getReviewsByGigID = catchAsync(async (req, res, next) => {
     const orders = await Order.find({ gigID });
 
     if (!orders || orders.length === 0) {
-        return next(new AppError(`No orders found for gig ID: ${gigID}`, 404));
+        res.status(200).json({
+            status: "fail",
+            results: 0,
+            data: {
+            }
+        });
     }
 
     const orderIDs = orders.map(order => order._id);
@@ -131,7 +141,12 @@ exports.getReviewsByGigID = catchAsync(async (req, res, next) => {
     const reviews = await Review.find({ orderID: { $in: orderIDs } });
 
     if (!reviews || reviews.length === 0) {
-        return next(new AppError(`No reviews found for gig ID: ${gigID}`, 404));
+        res.status(200).json({
+            status: "fail",
+            results: 0,
+            data: {
+            }
+        });
     }
 
     res.status(200).json({

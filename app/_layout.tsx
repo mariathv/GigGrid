@@ -42,6 +42,7 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="(modals)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(client)" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />

@@ -51,3 +51,39 @@ export const deleteGig = async (id: any) => {
         throw error;
     }
 }
+
+export const getFeaturedGigs = async () => {
+    try {
+        const response = await api.get(`/gigs?limit=3&sort=rating`);
+        return response.data;
+    } catch (error: any) {
+        console.error("getting gig failed", error?.response.data || error.message);
+        throw error;
+    }
+}
+
+export const getAllGigs = async () => {
+    try {
+        const response = await api.get(`/gigs?&sort=rating`);
+        return response.data;
+    } catch (error: any) {
+        console.error("getting gig failed", error?.response.data || error.message);
+        throw error;
+    }
+}
+
+export const getGigReviews = async (id: any) => {
+    try {
+        const response = await api.get(`gigs/${id}/reviews`);
+        return response.data;
+    } catch (error: any) {
+        console.error("getting gig reviews failed", error?.response.data || error.message);
+        throw error;
+    }
+}
+
+
+/*
+    possible improvement for sprint 3:
+    make filters before fetching
+*/

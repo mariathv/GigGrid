@@ -3,8 +3,9 @@ const Gig = require('./../models/gig');
 const catchAsync = require("./../utils/catchAsync")
 const AppError = require("./../utils/appError");
 const e = require("express");
+const APIFeatures = require("./../utils/apiFeatures")
 
-exports.createOrder = catchAsync(async (req , res , next) => {
+exports.createOrder = catchAsync(async (req, res, next) => {
     const { gigID, selectedPackage } = req.body;
     const clientID = req.user._id
 
@@ -25,14 +26,14 @@ exports.createOrder = catchAsync(async (req , res , next) => {
     const currentTime = new Date();
     const deliveryTime = new Date(currentTime.getTime() + packageDetails.deliveryTime * 24 * 60 * 60 * 1000)
 
-    const newOrder = await Order.create ({
+    const newOrder = await Order.create({
         gigID,
         clientID,
-        freelancerID : gig.userID,
+        freelancerID: gig.userID,
         selectedPackage,
-        status : "pending",
-        createdAt :currentTime,
-        deliveryTime : deliveryTime
+        status: "pending",
+        createdAt: currentTime,
+        deliveryTime: deliveryTime
     })
 
     res.status(201).json({
@@ -46,9 +47,12 @@ exports.createOrder = catchAsync(async (req , res , next) => {
 exports.getClientOrders = catchAsync(async (req, res, next) => {
     const clientID = req.user._id;
 
-    const clientOrders = await Order.find({ clientID }).sort({ createdAt: -1 });
+    let features = new APIFeatures(Order.find({ clientID }), req.query)
+        .sort()
+        .limit()
 
-    // Fetch gig details for each order and include only the selected package
+    const clientOrders = await features.query;
+
     const ordersWithGigDetails = await Promise.all(
         clientOrders.map(async (order) => {
             const gig = await Gig.findById(order.gigID);
@@ -57,7 +61,6 @@ exports.getClientOrders = catchAsync(async (req, res, next) => {
                 return next(new AppError(`Gig not found for order ID: ${order._id}`, 404));
             }
 
-            // Ensure selectedPackage is a string, not an array
             const selectedPackageType = order.selectedPackage[0];
             const selectedPackage = gig[selectedPackageType];
 
@@ -73,6 +76,9 @@ exports.getClientOrders = catchAsync(async (req, res, next) => {
                     description: gig.description,
                     category: gig.category,
                     tags: gig.tags,
+                    images: gig.images,
+                    rating: gig.rating,
+                    minPrice: gig.minPrice,
                     selectedPackage: {
                         type: selectedPackageType,
                         description: selectedPackage.description,
@@ -95,7 +101,8 @@ exports.getClientOrders = catchAsync(async (req, res, next) => {
     });
 });
 
-exports.getFreelancerOrders = catchAsync ( async (req , res , next) => {
+
+exports.getFreelancerOrders = catchAsync(async (req, res, next) => {
     const freelancerID = req.user._id;
 
     const clientOrders = await Order.find({ freelancerID }).sort({ createdAt: -1 });
@@ -147,13 +154,13 @@ exports.getFreelancerOrders = catchAsync ( async (req , res , next) => {
 
 })
 
-exports.getOrder = catchAsync(async(req , res , next) => {
+exports.getOrder = catchAsync(async (req, res, next) => {
     const orderID = req.params.id;
     const userID = req.user._id;
 
     const order = await Order.findById(orderID);
 
-    if(!order) { 
+    if (!order) {
         return next(new AppError(`Order not found for order ID: ${orderID}`, 404))
     }
 
@@ -171,7 +178,7 @@ exports.getOrder = catchAsync(async(req , res , next) => {
     const selectedPackageType = order.selectedPackage[0];
     const selectedPackage = gig[selectedPackageType];
 
-    const response =  {
+    const response = {
         _id: order._id,
         clientID: order.clientID,
         freelancerID: order.freelancerID,
@@ -203,7 +210,7 @@ exports.getOrder = catchAsync(async(req , res , next) => {
 })
 
 
-exports.confirmOrder = catchAsync(async (req , res , next) => {
+exports.confirmOrder = catchAsync(async (req, res, next) => {
     const orderID = req.params.id;
     const userID = req.user._id;
 

@@ -79,8 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/login")
-    } else if (isAuthenticated && inAuthGroup) {
+    } else if (isAuthenticated && inAuthGroup && user?.userType == "Freelancer") {
+      console.log("redirecting to freelancer tabs")
       router.replace("/(tabs)")
+    } else if (isAuthenticated && inAuthGroup && user?.userType == "Client") {
+      console.log("redirecting to client tabs")
+      router.replace("/(client)")
     }
   }, [isAuthenticated, segments, isLoading])
 
