@@ -64,7 +64,7 @@ const getTabTitle = (routeName: string) => {
 };
 
 const shouldShowHeader = (routeName: string) => {
-  return !['notifications', 'settings', 'addGig', 'myGigs', 'index'].includes(routeName);
+  return !['notifications', 'settings', 'orders' , 'addGig', 'myGigs', 'index'].includes(routeName);
 };
 
 const HeaderIcons = ({ route }: { route: string }) => {

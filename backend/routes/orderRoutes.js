@@ -44,4 +44,12 @@ router
     orderController.confirmOrder
   );
 
+  router
+  .route("/:id/cancel")
+  .patch(
+    authController.protect,
+    authController.restrictTo("Freelancer"),
+    orderController.cancelOrder
+  );
+
 module.exports = router;

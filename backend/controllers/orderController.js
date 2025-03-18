@@ -237,4 +237,35 @@ exports.confirmOrder = catchAsync(async (req, res, next) => {
 })
 
 
+exports.cancelOrder = catchAsync(async (req, res, next) => {
+    const orderID = req.params.id;
+    const userID = req.user._id;
+
+    const order = await Order.findById(orderID);
+
+    if (!order) {
+        return next(new AppError(`Order not found for order ID: ${orderID}`, 404));
+    }
+
+    if (userID.toString() !== order.freelancerID.toString()) {
+        return next(new AppError(`You are not authorized to cancel this order`, 403));
+    }
+
+    if (order.status === "completed") {
+        return next(new AppError(`You cannot cancel a completed order`, 400));
+    }
+
+    order.status = "cancelled";
+    await order.save();
+
+    res.status(200).json({
+        status: "success",
+        message: "Order cancelled successfully",
+        data: {
+            order
+        }
+    });
+});
+
+
 

@@ -20,6 +20,16 @@ export const getAllMyOrders_Client = async () => {
     }
 }
 
+export const getAllMyOrders_Freelancer = async () => {
+    try {
+        const response = await api.get('orders/freelancer');
+        return response.data;
+    } catch (error: any) {
+        console.error('get orders failed:', error?.response?.data || error.message);
+        throw error;
+    }
+}
+
 export const placeGigOrder = async (bodyData: any) => {
     try {
         const response = await api.post('orders/', bodyData);
@@ -29,3 +39,24 @@ export const placeGigOrder = async (bodyData: any) => {
         throw error;
     }
 }
+
+export const confirmOrder = async (orderId: string) => {
+    try {
+        const response = await api.patch(`orders/${orderId}/confirm`);
+        return response.data;
+    } catch (error: any) {
+        console.error('confirm order failed:', error?.response?.data || error.message);
+        throw error;
+    }
+};
+
+
+export const cancelOrder = async (orderId: string) => {
+    try {
+        const response = await api.patch(`orders/${orderId}/cancel`);
+        return response.data;
+    } catch (error: any) {
+        console.error("Cancel order failed:", error?.response?.data || error.message);
+        throw error;
+    }
+};
