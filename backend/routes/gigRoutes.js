@@ -43,4 +43,6 @@ router
     gigController.deleteGig
   );
 
+router.route("/get/earnings").get(authController.protect, authController.restrictTo("Freelancer"), gigController.getFreelancerMonthlyEarnings);
+
 module.exports = router;

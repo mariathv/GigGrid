@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { useRouter } from "expo-router"
+import { useFocusEffect, useRouter } from "expo-router"
 import { ThemedView } from "@/components/ThemedView"
 import { ThemedText } from "@/components/ThemedText"
 import { StatusBar } from "expo-status-bar"
@@ -52,33 +52,50 @@ export default function MyGigsScreen() {
 
     const [initialLoading, setInitialLoading] = useState(true)
 
-    useEffect(() => {
-        const fetchGigs = async () => {
-            try {
-                console.log("fetch init gigs")
-                const response = await getMyGigs()
-                if (!response || !response.data) {
-                    console.error("Invalid response structure:", response)
-                    setFilteredGigs([])
-                    setGigs([])
-                    return
+    useFocusEffect(
+        useCallback(() => {
+            let isActive = true;
+
+            const fetchGigs = async () => {
+                try {
+                    console.log("fetch init gigs");
+                    const response = await getMyGigs();
+
+                    if (!response || !response.data) {
+                        console.error("Invalid response structure:", response);
+                        if (isActive) {
+                            setFilteredGigs([]);
+                            setGigs([]);
+                        }
+                        return;
+                    }
+
+                    const gigsArray = Array.isArray(response.data.myGigs) ? response.data.myGigs : [];
+
+                    if (isActive) {
+                        setFilteredGigs(gigsArray);
+                        setGigs(gigsArray);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch gigs", error);
+                    if (isActive) {
+                        setFilteredGigs([]);
+                        setGigs([]);
+                    }
+                } finally {
+                    if (isActive) {
+                        setInitialLoading(false);
+                    }
                 }
+            };
 
-                const gigsArray = Array.isArray(response.data.myGigs) ? response.data.myGigs : []
+            fetchGigs();
 
-                setFilteredGigs(gigsArray)
-                setGigs(gigsArray)
-            } catch (error) {
-                console.error("Failed to fetch gigs", error)
-                setFilteredGigs([])
-                setGigs([])
-            } finally {
-                setInitialLoading(false)
-            }
-        }
-
-        fetchGigs()
-    }, [])
+            return () => {
+                isActive = false;
+            };
+        }, [])
+    );
 
     useEffect(() => {
         // Don't run filtering if there are no gigs to filter
@@ -160,7 +177,9 @@ export default function MyGigsScreen() {
             premium: mapPackage(targetGig.premium),
             orders: targetGig.orders,
             rating: targetGig.rating,
-            createdAt: targetGig.createdAt
+            createdAt: targetGig.createdAt,
+            averageRating: targetGig.averageRating,
+            totalOrders: targetGig.totalOrders
         };
 
 
@@ -341,7 +360,7 @@ export default function MyGigsScreen() {
                                             <View className="flex-row mb-2">
                                                 <View className="flex-row items-center mr-4">
                                                     <Ionicons name="star" size={14} color="#FFD700" />
-                                                    <Text className="text-xs text-gray-400 ml-1">{gig.rating}</Text>
+                                                    <Text className="text-xs text-gray-400 ml-1">{gig.averageRating}</Text>
                                                 </View>
                                                 <View className="flex-row items-center">
                                                     <Ionicons name="cart-outline" size={14} color="#777" />

@@ -36,3 +36,13 @@ export const getUser = async (id: any) => {
     }
 };
 
+export const getFreelancerEarnings = async () => {
+    try {
+        const response = await api.get(`/gigs/get/earnings`);
+        return response.data;
+    } catch (error: any) {
+        console.error('earning fetch failed', error?.response?.data || error.message);
+        throw error;
+    }
+}
+

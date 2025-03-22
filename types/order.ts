@@ -24,6 +24,10 @@ export type Order = {
             featuresIncluded: string[];
         };
     };
+    review?: {
+        rating: String;
+        comment: String;
+    }
 };
 
 export type OrderStatus = 'pending' | 'completed' | 'cancelled';

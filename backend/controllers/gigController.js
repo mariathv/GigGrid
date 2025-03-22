@@ -28,28 +28,149 @@ exports.getAllGigs = catchAsync(async (req, res, next) => {
 
     const allGigs = await features.query;
 
-    res.status(200).json({
-        status: "success",
-        requestedAt: req.requestTime,
-        length: allGigs.length,
-        data: {
-            allGigs,
+    // Fetch average rating and total reviews per gig
+    const ratings = await Review.aggregate([
+        {
+            $lookup: {
+                from: "orders",
+                localField: "orderID",
+                foreignField: "_id",
+                as: "order"
+            }
         },
-    });
-})
+        { $unwind: "$order" },
+        {
+            $group: {
+                _id: "$order.gigID",
+                averageRating: { $avg: "$rating" },
+                totalReviews: { $sum: 1 }
+            }
+        }
+    ]);
 
-exports.getMyGigs = catchAsync(async (req, res, next) => {
-    const myGigs = await gig.find({ userID: req.user._id });
+    const ratingMap = {};
+    ratings.forEach((rating) => {
+        ratingMap[rating._id.toString()] = {
+            averageRating: rating.averageRating,
+            totalReviews: rating.totalReviews
+        };
+    });
+
+    // Fetch total orders per gig
+    const orderCounts = await Order.aggregate([
+        {
+            $group: {
+                _id: "$gigID",
+                totalOrders: { $sum: 1 }
+            }
+        }
+    ]);
+
+    const orderCountMap = {};
+    orderCounts.forEach((order) => {
+        orderCountMap[order._id.toString()] = order.totalOrders;
+    });
+
+    // Combine gig data with stats
+    const allGigsWithStats = allGigs.map((gig) => {
+        const rating = ratingMap[gig._id.toString()] || { averageRating: 0, totalReviews: 0 };
+        const totalOrders = orderCountMap[gig._id.toString()] || 0;
+
+        return {
+            ...gig.toObject(),
+            averageRating: Number(rating.averageRating.toFixed(1)),
+            totalReviews: rating.totalReviews,
+            totalOrders: totalOrders
+        };
+    });
+    let finalGigs = [...allGigsWithStats];
+
+    if (req.query.sort === "averageRating") {
+        finalGigs.sort((a, b) => b.averageRating - a.averageRating);
+    }
+
 
     res.status(200).json({
         status: "success",
         requestedAt: req.requestTime,
-        totalGigs: myGigs.length,
+        length: finalGigs.length,
         data: {
-            myGigs
+            allGigs: finalGigs
         }
     });
-})
+});
+
+
+
+
+exports.getMyGigs = catchAsync(async (req, res, next) => {
+    const userID = req.user._id;
+
+    const myGigs = await gig.find({ userID });
+
+    const ratings = await Review.aggregate([
+        {
+            $lookup: {
+                from: "orders",
+                localField: "orderID",
+                foreignField: "_id",
+                as: "order"
+            }
+        },
+        { $unwind: "$order" },
+        {
+            $group: {
+                _id: "$order.gigID",
+                averageRating: { $avg: "$rating" },
+                totalReviews: { $sum: 1 }
+            }
+        }
+    ]);
+
+    const ratingMap = {};
+    ratings.forEach((rating) => {
+        ratingMap[rating._id.toString()] = {
+            averageRating: rating.averageRating,
+            totalReviews: rating.totalReviews
+        };
+    });
+
+    const orderCounts = await Order.aggregate([
+        {
+            $group: {
+                _id: "$gigID",
+                totalOrders: { $sum: 1 }
+            }
+        }
+    ]);
+
+    const orderCountMap = {};
+    orderCounts.forEach((order) => {
+        orderCountMap[order._id.toString()] = order.totalOrders;
+    });
+
+    const myGigsWithStats = myGigs.map((gig) => {
+        const rating = ratingMap[gig._id.toString()] || { averageRating: 0, totalReviews: 0 };
+        const totalOrders = orderCountMap[gig._id.toString()] || 0;
+
+        return {
+            ...gig.toObject(),
+            averageRating: Number(rating.averageRating.toFixed(1)),
+            totalReviews: rating.totalReviews,
+            totalOrders: totalOrders
+        };
+    });
+
+    res.status(200).json({
+        status: "success",
+        requestedAt: req.requestTime,
+        totalGigs: myGigsWithStats.length,
+        data: {
+            myGigs: myGigsWithStats
+        }
+    });
+});
+
 
 exports.getGig = catchAsync(async (req, res, next) => {
     const thisGig = await gig.findById(req.params.id);
@@ -155,5 +276,40 @@ exports.getReviewsByGigID = catchAsync(async (req, res, next) => {
         data: {
             reviews
         }
+    });
+});
+
+exports.getFreelancerMonthlyEarnings = catchAsync(async (req, res, next) => {
+
+    const freelancerID = req.user._id;
+
+
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
+
+    const completedOrders = await Order.find({
+        freelancerID,
+        status: 'completed',
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+    });
+
+    let totalEarnings = 0;
+
+    for (const order of completedOrders) {
+        const Gig = await gig.findById(order.gigID);
+        if (!Gig) continue;
+
+        const selectedPackageType = order.selectedPackage[0];
+        const selectedPackage = Gig[selectedPackageType];
+
+        totalEarnings += selectedPackage?.price || 0;
+    }
+
+    res.status(200).json({
+        status: 'success',
+        totalEarnings,
+        completedOrders: completedOrders.length,
+        month: startOfMonth.toLocaleString('default', { month: 'long' }),
+        year: startOfMonth.getFullYear()
     });
 });

@@ -23,6 +23,8 @@ export interface GigData {
     rating: number;
     isActive: boolean;
     createdAt: Date;
+    averageRating: String;
+    totalOrders: String;
 }
 export interface advancedGigData {
     _id: string;
