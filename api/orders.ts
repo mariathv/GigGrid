@@ -60,3 +60,14 @@ export const cancelOrder = async (orderId: string) => {
         throw error;
     }
 };
+
+
+export const getOrderById = async (orderId: string) => {
+    try {
+      const response = await api.get(`orders/${orderId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching order details:", error)
+      throw error
+    }
+  }
