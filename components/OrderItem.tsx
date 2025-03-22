@@ -6,20 +6,13 @@ import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
+import { Order } from "@/types/order"
 
 interface OrderItemProps {
-    item: OrderItem;
+    item: Order;
 }
 
 
-interface OrderItem {
-    id: string;
-    clientName: string;
-    gigTitle: string;
-    amount: string;
-    status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-    date: string;
-}
 
 
 const OrderItemCard = ({ item }: OrderItemProps) => {
@@ -46,19 +39,28 @@ const OrderItemCard = ({ item }: OrderItemProps) => {
     return (
         <TouchableOpacity style={styles.orderItem} onPress={() => { }}>
             <View style={styles.orderHeader}>
-                <ThemedText style={styles.clientName}>{item.clientName}</ThemedText>
-                <ThemedText style={styles.orderAmount}>{item.amount}</ThemedText>
+                <ThemedText style={styles.orderTitle} numberOfLines={1}>{item.gig?.title}</ThemedText>
+
+                <ThemedText style={styles.orderAmount}>${item.gig?.selectedPackage.price}</ThemedText>
             </View>
 
-            <ThemedText style={styles.orderTitle} numberOfLines={1}>{item.gigTitle}</ThemedText>
+            <ThemedText style={styles.clientName}>Client ID: {item.clientID}</ThemedText>
 
             <View style={styles.orderFooter}>
-                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20`, borderColor: getStatusColor(item.status) }]}>
-                    <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                        {getStatusText(item.status)}
+                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status || "")}20`, borderColor: getStatusColor(item.status || "") }]}>
+                    <ThemedText style={[styles.statusText, { color: getStatusColor(item.status || "") }]}>
+                        {getStatusText(item.status || "")}
                     </ThemedText>
                 </View>
-                <ThemedText style={styles.orderDate}>{item.date}</ThemedText>
+                <Text className="text-white/50 text-sm">
+                    {item.createdAt
+                        ? new Date(item.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                        })
+                        : ''}
+                </Text>
             </View>
         </TouchableOpacity>
     )
@@ -291,8 +293,9 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     clientName: {
-        fontSize: 16,
-        fontWeight: "bold",
+        fontSize: 12,
+        color: '#666',
+        marginBottom: 5
     },
     orderAmount: {
         fontSize: 16,
@@ -301,8 +304,6 @@ const styles = StyleSheet.create({
     },
     orderTitle: {
         fontSize: 14,
-        color: "#555",
-        marginBottom: 10,
     },
     orderFooter: {
         flexDirection: "row",

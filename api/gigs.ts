@@ -54,7 +54,7 @@ export const deleteGig = async (id: any) => {
 
 export const getFeaturedGigs = async () => {
     try {
-        const response = await api.get(`/gigs?limit=3&sort=rating`);
+        const response = await api.get(`/gigs?limit=3&sort=averageRating`);
         return response.data;
     } catch (error: any) {
         console.error("getting gig failed", error?.response.data || error.message);
@@ -64,7 +64,7 @@ export const getFeaturedGigs = async () => {
 
 export const getAllGigs = async () => {
     try {
-        const response = await api.get(`/gigs?&sort=rating`);
+        const response = await api.get(`/gigs?sort=averageRating`);
         return response.data;
     } catch (error: any) {
         console.error("getting gig failed", error?.response.data || error.message);

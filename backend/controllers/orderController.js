@@ -4,6 +4,7 @@ const catchAsync = require("./../utils/catchAsync")
 const AppError = require("./../utils/appError");
 const e = require("express");
 const APIFeatures = require("./../utils/apiFeatures")
+const Review = require('../models/review');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
     const { gigID, selectedPackage } = req.body;
@@ -105,19 +106,23 @@ exports.getClientOrders = catchAsync(async (req, res, next) => {
 exports.getFreelancerOrders = catchAsync(async (req, res, next) => {
     const freelancerID = req.user._id;
 
-    const clientOrders = await Order.find({ freelancerID }).sort({ createdAt: -1 });
+    const features = new APIFeatures(Order.find({ freelancerID }), req.query)
+        .sort()
+        .limit();
 
-    const ordersWithGigDetails = await Promise.all(
-        clientOrders.map(async (order) => {
+    const freelancerOrders = await features.query;
+
+    const ordersWithGigAndReview = await Promise.all(
+        freelancerOrders.map(async (order) => {
             const gig = await Gig.findById(order.gigID);
-
             if (!gig) {
                 return next(new AppError(`Gig not found for order ID: ${order._id}`, 404));
             }
 
-            // Ensure selectedPackage is a string, not an array
             const selectedPackageType = order.selectedPackage[0];
             const selectedPackage = gig[selectedPackageType];
+
+            const review = await Review.findOne({ orderID: order._id });
 
             return {
                 _id: order._id,
@@ -131,6 +136,9 @@ exports.getFreelancerOrders = catchAsync(async (req, res, next) => {
                     description: gig.description,
                     category: gig.category,
                     tags: gig.tags,
+                    images: gig.images,
+                    rating: gig.rating,
+                    minPrice: gig.minPrice,
                     selectedPackage: {
                         type: selectedPackageType,
                         description: selectedPackage.description,
@@ -139,20 +147,25 @@ exports.getFreelancerOrders = catchAsync(async (req, res, next) => {
                         numberOfRevisions: selectedPackage.numberOfRevisions,
                         featuresIncluded: selectedPackage.featuresIncluded,
                     }
-                }
+                },
+                review: review
+                    ? {
+                        rating: review.rating,
+                        comment: review.comment
+                    }
+                    : null
             };
         })
     );
 
     res.status(200).json({
         status: 'success',
-        results: ordersWithGigDetails.length,
+        results: ordersWithGigAndReview.length,
         data: {
-            orders: ordersWithGigDetails
+            orders: ordersWithGigAndReview
         }
     });
-
-})
+});
 
 exports.getOrder = catchAsync(async (req, res, next) => {
     const orderID = req.params.id;

@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { useRouter } from "expo-router"
+import { useFocusEffect, useRouter } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
 import GigCard from "@/components/GigCard"
@@ -11,53 +11,9 @@ import OrderItemCard from "@/components/OrderItem"
 import { GigData } from "@/types/gigs"
 import "@/global.css"
 import { getMyGigs } from "@/api/gigs"
-
-
-
-interface OrderItem {
-  id: string;
-  clientName: string;
-  gigTitle: string;
-  amount: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  date: string;
-}
-
-
-
-
-
-
-
-
-const recentOrders: OrderItem[] = [
-  {
-    id: "1",
-    clientName: "Maria Naeem",
-    gigTitle: "Professional Mobile App Development",
-    amount: "$250",
-    status: "in_progress",
-    date: "2 days ago",
-  },
-  {
-    id: "2",
-    clientName: "Hussnain Ul Abidin",
-    gigTitle: "Modern UI/UX Design for Web & Mobile",
-    amount: "$180",
-    status: "pending",
-    date: "5 hours ago",
-  },
-  {
-    id: "3",
-    clientName: "Hamdan Sajid",
-    gigTitle: "SEO-Optimized Content Writing",
-    amount: "$75",
-    status: "completed",
-    date: "1 week ago",
-  },
-]
-
-
+import { getAllMyOrders_Freelancer, getMyRecentOrders_Freelancer } from "@/api/orders"
+import { Order } from "@/types/order"
+import { getFreelancerEarnings } from "@/api/user"
 
 
 
@@ -66,28 +22,57 @@ export default function HomeScreen() {
   const [myGigs, setGigs] = useState<GigData[]>([])
   const [initialLoading, setInitialLoading] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [monthlyEarning, setEarning] = useState(null);
+  const [earningMonth, setEarningMonth] = useState(null);
 
-  useEffect(() => {
-    const fetchGigs = async () => {
-      try {
-        const response = await getMyGigs();
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-        const gigsArray = Array.isArray(response?.data?.myGigs)
-          ? response.data.myGigs
-          : [];
+      const fetchGigs = async () => {
+        try {
+          const response = await getMyGigs();
 
-        setGigs(gigsArray);
-      } catch (error) {
-        console.error("Failed to fetch gigs", error);
+          const responseorders = await getMyRecentOrders_Freelancer()
 
-        setGigs([]);
-      } finally {
-        setInitialLoading(false);
-      }
-    };
+          const responseEarnings = await getFreelancerEarnings();
 
-    fetchGigs();
-  }, []);
+          console.log('ear', responseEarnings);
+
+          const gigsArray = Array.isArray(response?.data?.myGigs)
+            ? response.data.myGigs
+            : [];
+
+          const ordersArray = Array.isArray(responseorders?.data?.orders)
+            ? responseorders.data.orders
+            : [];
+
+          if (isActive) {
+            setGigs(gigsArray);
+            setRecentOrders(ordersArray);
+            setEarning(responseEarnings?.totalEarnings)
+            setEarningMonth(responseEarnings?.month)
+          }
+        } catch (error) {
+          console.error("Failed to fetch gigs", error);
+          if (isActive) {
+            setGigs([]);
+          }
+        } finally {
+          if (isActive) {
+            setInitialLoading(false);
+          }
+        }
+      };
+
+      fetchGigs();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
 
   const router = useRouter()
@@ -129,8 +114,9 @@ export default function HomeScreen() {
             <View style={[styles.statIconContainer, { backgroundColor: 'rgba(75, 113, 114, 0.1)' }]}>
               <Ionicons name="cash-outline" size={24} color="#4B7172" />
             </View>
-            <ThemedText style={styles.statCount}>$1,250</ThemedText>
-            <ThemedText style={styles.statLabel}>This Month</ThemedText>
+            <ThemedText style={styles.statCount}>${monthlyEarning}</ThemedText>
+            <ThemedText style={styles.statLabel}>This Month {earningMonth}</ThemedText>
+
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -196,7 +182,7 @@ export default function HomeScreen() {
           </View>
 
           {recentOrders.map(item => (
-            <OrderItemCard key={item.id} item={item} />
+            <OrderItemCard key={item._id} item={item} />
           ))}
         </View>
 
@@ -508,3 +494,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 })
+
+
+

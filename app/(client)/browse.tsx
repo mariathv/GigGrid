@@ -238,11 +238,11 @@ export default function BrowseScreen() {
                                         <View style={styles.gigMeta}>
                                             <View style={styles.metaItem}>
                                                 <Ionicons name="star" size={14} color="#FFD700" />
-                                                <ThemedText style={styles.metaText}>{gig.rating}</ThemedText>
+                                                <ThemedText style={styles.metaText}>{gig.averageRating}</ThemedText>
                                             </View>
                                             <View style={styles.metaItem}>
                                                 <Ionicons name="cart-outline" size={14} color="#777" />
-                                                <ThemedText style={styles.metaText}>{gig.orders} orders</ThemedText>
+                                                <ThemedText style={styles.metaText}>{gig.totalOrders} orders</ThemedText>
                                             </View>
                                         </View>
                                     </View>

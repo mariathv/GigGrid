@@ -38,7 +38,7 @@ export default function FreelancerOrdersScreen() {
 
       fetchMyOrders()
 
-      return () => {}
+      return () => { }
     }, []),
   )
 
@@ -126,12 +126,12 @@ export default function FreelancerOrdersScreen() {
         </TouchableOpacity>
         <ThemedText className="text-xl font-bold">My Orders</ThemedText>
         <TouchableOpacity className="w-10 h-10 justify-center items-center">
-          <Ionicons name="options-outline" size={22} color="#4B7172" />
+
         </TouchableOpacity>
       </View>
 
       {/* Stats Overview */}
-      <View className="flex-row justify-between mx-5 mb-6">
+      <View className="flex-row justify-between mx-5 mb-6 px-10">
         <View className="items-center">
           <Text className="text-lg font-bold text-white">{orders.filter((o) => o.status === "pending").length}</Text>
           <Text className="text-xs text-gray-400">Active</Text>
@@ -184,12 +184,12 @@ export default function FreelancerOrdersScreen() {
             <TouchableOpacity
               key={order._id}
               className="bg-[#111] rounded-lg p-4 mb-4"
-              //   onPress={() =>
-              //     router.push({
-              //       pathname: "/order-details",
-              //       params: { id: order._id },
-              //     })
-              //   }
+            //   onPress={() =>
+            //     router.push({
+            //       pathname: "/order-details",
+            //       params: { id: order._id },
+            //     })
+            //   }
             >
               <View className="flex-row justify-between items-center mb-1">
                 <Text className="text-base font-bold text-white flex-1 mr-2" numberOfLines={1}>
@@ -251,8 +251,8 @@ export default function FreelancerOrdersScreen() {
                   {order.status === "completed" && (
                     <View className="flex-row items-center">
                       <Ionicons name="star" size={14} color="#FFD700" />
-                      <Text className="text-sm text-gray-800 ml-1">
-                        {order.gig?.rating ? order.gig.rating : "Not rated yet"}
+                      <Text className="text-sm text-white ml-1">
+                        {order.review?.rating ? order.review.rating : "Not rated yet"}
                       </Text>
                     </View>
                   )}

@@ -84,16 +84,16 @@ export default function MessagesScreen() {
             if (params.freelancerId) {
                 const conversation = mockConversations.find(c => c.freelancerId === params.freelancerId)
                 if (conversation) {
-                    router.push({
-                        pathname: "/chat",
-                        params: {
-                            id: conversation.id,
-                            freelancerId: conversation.freelancerId,
-                            freelancerName: conversation.freelancerName,
-                            orderId: conversation.orderId,
-                            orderTitle: conversation.orderTitle
-                        }
-                    })
+                    // router.push({
+                    //     pathname: "/chat",
+                    //     params: {
+                    //         id: conversation.id,
+                    //         freelancerId: conversation.freelancerId,
+                    //         freelancerName: conversation.freelancerName,
+                    //         orderId: conversation.orderId,
+                    //         orderTitle: conversation.orderTitle
+                    //     }
+                    // })
                 }
             }
         }, 1000)
@@ -159,16 +159,16 @@ export default function MessagesScreen() {
                         <TouchableOpacity
                             key={conversation.id}
                             style={styles.conversationCard}
-                            onPress={() => router.push({
-                                pathname: "/chat",
-                                params: {
-                                    id: conversation.id,
-                                    freelancerId: conversation.freelancerId,
-                                    freelancerName: conversation.freelancerName,
-                                    orderId: conversation.orderId,
-                                    orderTitle: conversation.orderTitle
-                                }
-                            })}
+                        // onPress={() => router.push({
+                        //     pathname: "/chat",
+                        //     params: {
+                        //         id: conversation.id,
+                        //         freelancerId: conversation.freelancerId,
+                        //         freelancerName: conversation.freelancerName,
+                        //         orderId: conversation.orderId,
+                        //         orderTitle: conversation.orderTitle
+                        //     }
+                        // })}
                         >
                             <View style={styles.avatarContainer}>
                                 <View style={styles.avatar}>

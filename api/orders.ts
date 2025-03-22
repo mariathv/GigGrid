@@ -20,6 +20,16 @@ export const getAllMyOrders_Client = async () => {
     }
 }
 
+export const getMyRecentOrders_Freelancer = async () => {
+    try {
+        const response = await api.get('orders/freelancer?limit=3');
+        return response.data;
+    } catch (error: any) {
+        console.error('get orders failed:', error?.response?.data || error.message);
+        throw error;
+    }
+}
+
 export const getAllMyOrders_Freelancer = async () => {
     try {
         const response = await api.get('orders/freelancer');
@@ -64,10 +74,10 @@ export const cancelOrder = async (orderId: string) => {
 
 export const getOrderById = async (orderId: string) => {
     try {
-      const response = await api.get(`orders/${orderId}`);
-      return response.data;
+        const response = await api.get(`orders/${orderId}`);
+        return response.data;
     } catch (error) {
-      console.error("Error fetching order details:", error)
-      throw error
+        console.error("Error fetching order details:", error)
+        throw error
     }
-  }
+}
