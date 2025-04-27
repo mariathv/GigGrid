@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, RefreshControl } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter, useLocalSearchParams } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
 import "@/global.css"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { getUserChats, Chat, Message } from "@/api/chats"
 
 // Define types
 interface Conversation {
@@ -20,50 +22,6 @@ interface Conversation {
     orderTitle?: string;
 }
 
-// Mock data for conversations
-const mockConversations: Conversation[] = [
-    {
-        id: "1",
-        freelancerId: "201",
-        freelancerName: "John Doe",
-        lastMessage: "I've started working on your mobile app. Do you have any specific color preferences?",
-        timestamp: "2023-06-18T14:30:00.000Z",
-        unread: 2,
-        orderId: "1",
-        orderTitle: "Professional Mobile App Development"
-    },
-    {
-        id: "2",
-        freelancerId: "202",
-        freelancerName: "Jane Smith",
-        lastMessage: "Thank you for your order! I'll start working on your UI design right away.",
-        timestamp: "2023-06-18T10:15:00.000Z",
-        unread: 0,
-        orderId: "2",
-        orderTitle: "Modern UI/UX Design for Web & Mobile"
-    },
-    {
-        id: "3",
-        freelancerId: "203",
-        freelancerName: "Mike Johnson",
-        lastMessage: "I've delivered the content. Please let me know if you need any revisions.",
-        timestamp: "2023-06-17T16:45:00.000Z",
-        unread: 1,
-        orderId: "3",
-        orderTitle: "SEO-Optimized Content Writing"
-    },
-    {
-        id: "4",
-        freelancerId: "204",
-        freelancerName: "Sarah Williams",
-        lastMessage: "I'm glad you liked the logo design. It was a pleasure working with you!",
-        timestamp: "2023-06-15T09:20:00.000Z",
-        unread: 0,
-        orderId: "4",
-        orderTitle: "Logo Design"
-    }
-]
-
 export default function MessagesScreen() {
     const router = useRouter()
     const params = useLocalSearchParams()
@@ -72,31 +30,69 @@ export default function MessagesScreen() {
     const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        // Simulate API call
+    const fetchChats = async () => {
         setIsLoading(true)
-        setTimeout(() => {
-            setConversations(mockConversations)
-            setFilteredConversations(mockConversations)
-            setIsLoading(false)
-
-            // If there's a freelancerId in params, navigate to that conversation
-            if (params.freelancerId) {
-                const conversation = mockConversations.find(c => c.freelancerId === params.freelancerId)
-                if (conversation) {
-                    // router.push({
-                    //     pathname: "/chat",
-                    //     params: {
-                    //         id: conversation.id,
-                    //         freelancerId: conversation.freelancerId,
-                    //         freelancerName: conversation.freelancerName,
-                    //         orderId: conversation.orderId,
-                    //         orderTitle: conversation.orderTitle
-                    //     }
-                    // })
-                }
+        try {
+            const data = await getUserChats();
+            
+            if (data.status === 'success') {
+                // Map backend chat data to our Conversation interface
+                const mappedConversations = data.data.chats.map((chat: Chat) => {
+                    // For client view, the other person is the freelancer
+                    const unreadCount = chat.messages.filter(
+                        (msg: Message) => !msg.read && msg.sender === chat.freelancer._id
+                    ).length
+                    
+                    // Get the last message if it exists
+                    const lastMsg = chat.messages.length > 0 
+                        ? chat.messages[chat.messages.length - 1].content 
+                        : 'No messages yet'
+                    
+                    // Get gig title if available or use a placeholder
+                    const orderTitle = chat.orderId.gig?.title || `Order #${chat.orderId._id.substring(0, 8)}`
+                    
+                    return {
+                        id: chat._id,
+                        freelancerId: chat.freelancer._id,
+                        freelancerName: chat.freelancer.name,
+                        lastMessage: lastMsg,
+                        timestamp: chat.lastActivity,
+                        unread: unreadCount,
+                        orderId: chat.orderId._id,
+                        orderTitle: orderTitle
+                    }
+                })
+                
+                setConversations(mappedConversations)
+                setFilteredConversations(mappedConversations)
             }
-        }, 1000)
+        } catch (error) {
+            console.error('Error fetching chats:', error)
+            Alert.alert('Error', 'Failed to load conversations')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchChats()
+        
+        // If there's a freelancerId in params, navigate to that conversation
+        if (params.freelancerId) {
+            const conversation = conversations.find(c => c.freelancerId === params.freelancerId)
+            if (conversation) {
+                router.push({
+                    pathname: "/(client)/chat",
+                    params: {
+                        id: conversation.id,
+                        freelancerId: conversation.freelancerId,
+                        freelancerName: conversation.freelancerName,
+                        orderId: conversation.orderId,
+                        orderTitle: conversation.orderTitle
+                    }
+                })
+            }
+        }
     }, [params.freelancerId])
 
     useEffect(() => {
@@ -148,7 +144,13 @@ export default function MessagesScreen() {
             </View>
 
             {/* Conversations List */}
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.conversationsContainer}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false} 
+                style={styles.conversationsContainer}
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={fetchChats} />
+                }
+            >
                 {isLoading ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="#4B7172" />
@@ -159,16 +161,16 @@ export default function MessagesScreen() {
                         <TouchableOpacity
                             key={conversation.id}
                             style={styles.conversationCard}
-                        // onPress={() => router.push({
-                        //     pathname: "/chat",
-                        //     params: {
-                        //         id: conversation.id,
-                        //         freelancerId: conversation.freelancerId,
-                        //         freelancerName: conversation.freelancerName,
-                        //         orderId: conversation.orderId,
-                        //         orderTitle: conversation.orderTitle
-                        //     }
-                        // })}
+                            onPress={() => router.push({
+                                pathname: "/(client)/chat",
+                                params: {
+                                    id: conversation.id,
+                                    freelancerId: conversation.freelancerId,
+                                    freelancerName: conversation.freelancerName,
+                                    orderId: conversation.orderId,
+                                    orderTitle: conversation.orderTitle
+                                }
+                            })}
                         >
                             <View style={styles.avatarContainer}>
                                 <View style={styles.avatar}>

@@ -1,4 +1,3 @@
-
 import api from './index';
 
 
@@ -32,6 +31,17 @@ export const getUser = async (id: any) => {
         return response.data;
     } catch (error: any) {
         console.error('user fetch failed', error?.response?.data || error.message);
+        throw error;
+    }
+};
+
+// Get the current logged-in user's data
+export const getCurrentUser = async () => {
+    try {
+        const response = await api.get('/user/me');
+        return response.data;
+    } catch (error: any) {
+        console.error('Current user fetch failed', error?.response?.data || error.message);
         throw error;
     }
 };

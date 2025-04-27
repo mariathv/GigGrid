@@ -1,6 +1,8 @@
 const { default: mongoose } = require("mongoose")
 const app = require("./app.js")
 const dotenv = require("dotenv")
+const http = require('http')
+const setupSocketIO = require('./socket')
 
 dotenv.config({
   path: "./config.env"
@@ -40,6 +42,14 @@ app.get('/', (req, res) => {
 
 
 const port = 3000 || process.env.PORT;
-app.listen(port, () => {
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = setupSocketIO(server);
+
+// Make io accessible throughout the app
+app.set('socketio', io);
+
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

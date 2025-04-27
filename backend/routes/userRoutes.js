@@ -31,6 +31,13 @@ router.post("/auth/register", authController.register);
 
 router.post("/auth/login", authController.login);
 
+// Get current authenticated user
+router.get(
+  "/user/me", 
+  authController.protect, 
+  userController.getCurrentUser
+);
+
 //will add authentication middleware here later
 router.post(
   "/user/:userid/pfp-upload",
@@ -40,7 +47,8 @@ router.post(
 
 router.get("/user/:userid/pfp", userController.getPfp);
 
-router.get("/user/:userid", userController.getUser)
+router.get("/user/:userid", userController.getUser);
+
 
 router.post(
   "/user/update",

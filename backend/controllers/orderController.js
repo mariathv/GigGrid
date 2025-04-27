@@ -1,5 +1,6 @@
 const Order = require("./../models/order")
 const Gig = require('./../models/gig');
+const Chat = require('./../models/chat');
 const catchAsync = require("./../utils/catchAsync")
 const AppError = require("./../utils/appError");
 const e = require("express");
@@ -7,7 +8,7 @@ const APIFeatures = require("./../utils/apiFeatures")
 const Review = require('../models/review');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
-    const { gigID, selectedPackage } = req.body;
+    const { gigID, selectedPackage } = req.body; 
     const clientID = req.user._id
 
     if (!gigID || !clientID || !selectedPackage) {
@@ -36,6 +37,14 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         createdAt: currentTime,
         deliveryTime: deliveryTime
     })
+
+    // Create a new chat for this order
+    await Chat.create({
+        freelancer: gig.userID,
+        client: clientID,
+        orderId: newOrder._id,
+        messages: []
+    });
 
     res.status(201).json({
         status: 'success',

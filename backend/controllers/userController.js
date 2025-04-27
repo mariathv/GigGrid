@@ -1,4 +1,3 @@
-
 const User = require("../models/user")
 const { default: mongoose } = require("mongoose")
 const { getBucket } = require("../utils/gridfs");
@@ -130,6 +129,28 @@ const userController = {
             next(new AppError("Failed to fetch user", 500));
         }
     },
+    getCurrentUser: catchAsync(async (req, res, next) => {
+        // The user is already authenticated, so req.user should contain the user's ID
+        // from the auth middleware
+        
+        // If somehow user is not authenticated, return error
+        if (!req.user || !req.user._id) {
+            return next(new AppError('You are not logged in. Please log in to get access.', 401));
+        }
+        
+        // Find the current user by ID
+        const user = await User.findById(req.user._id).select('-password');
+        
+        if (!user) {
+            return next(new AppError('The user belonging to this token no longer exists.', 401));
+        }
+        
+        // Send the user data back
+        res.status(200).json({
+            status: 'success',
+            user
+        });
+    }),
 };
 
 
