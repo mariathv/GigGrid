@@ -72,6 +72,7 @@ exports.getClientOrders = catchAsync(async (req, res, next) => {
                 status: order.status,
                 createdAt: order.createdAt,
                 deliveryTime: order.deliveryTime,
+                completionLink: order.completionLink,
                 gig: {
                     title: gig.title,
                     description: gig.description,
@@ -198,11 +199,15 @@ exports.getOrder = catchAsync(async (req, res, next) => {
         status: order.status,
         createdAt: order.createdAt,
         deliveryTime: order.deliveryTime,
+        completionLink: order.completionLink,
         gig: {
             title: gig.title,
             description: gig.description,
             category: gig.category,
             tags: gig.tags,
+            images: gig.images,
+            rating: gig.rating,
+            minPrice: gig.minPrice,
             selectedPackage: {
                 type: selectedPackageType,
                 description: selectedPackage.description,
@@ -226,6 +231,7 @@ exports.getOrder = catchAsync(async (req, res, next) => {
 exports.confirmOrder = catchAsync(async (req, res, next) => {
     const orderID = req.params.id;
     const userID = req.user._id;
+    const { completionLink } = req.body;
 
     const order = await Order.findById(orderID);
 
@@ -237,7 +243,12 @@ exports.confirmOrder = catchAsync(async (req, res, next) => {
         return next(new AppError(`You are not authorized to confirm this order`, 403));
     }
 
+    if (!completionLink) {
+        return next(new AppError('Completion link is required', 400));
+    }
+
     order.status = "completed";
+    order.completionLink = completionLink;
     await order.save();
 
     res.status(200).json({

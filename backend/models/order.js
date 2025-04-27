@@ -28,6 +28,10 @@ const orderSchema = new mongoose.Schema({
         enum : ["pending" , "completed" , "cancelled"],
         default : "pending"
     },
+    completionLink: {
+        type: String,
+        default: ""
+    },
     createdAt : {
         type : Date
     },

@@ -2,11 +2,12 @@ export type Order = {
     _id?: string;
     clientID: string;
     freelancerID: string;
-    gigID?: string; // Optional now, since you’re returning full gig object instead
+    gigID?: string; // Optional now, since you're returning full gig object instead
     selectedPackageType?: "basic" | "standard" | "premium";
     status?: "pending" | "completed" | "cancelled";
     createdAt?: string | Date;
     deliveryTime?: string | Date;
+    completionLink?: string;
     gig?: {
         title: string;
         description: string;

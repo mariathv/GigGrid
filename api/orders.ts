@@ -50,9 +50,9 @@ export const placeGigOrder = async (bodyData: any) => {
     }
 }
 
-export const confirmOrder = async (orderId: string) => {
+export const confirmOrder = async (orderId: string, completionLink: string) => {
     try {
-        const response = await api.patch(`orders/${orderId}/confirm`);
+        const response = await api.patch(`orders/${orderId}/confirm`, { completionLink });
         return response.data;
     } catch (error: any) {
         console.error('confirm order failed:', error?.response?.data || error.message);
