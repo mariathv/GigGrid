@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView } from "react-native"
+import React, { useState, useCallback } from "react"
+import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView, Modal, TextInput } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useFocusEffect, useRouter } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
@@ -11,12 +11,16 @@ import "@/global.css"
 import type { OrderStatus, Order } from "@/types/order"
 import { getAllMyOrders_Freelancer } from "@/api/orders"
 import { confirmOrder, cancelOrder } from "@/api/orders"
+import { sendOrderCompletionNotification } from "@/api/expo-notifications/notif"
 
 export default function FreelancerOrdersScreen() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<"active" | "completed" | "cancelled">("active")
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [completionLink, setCompletionLink] = useState("")
+  const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>(undefined)
 
   useFocusEffect(
     useCallback(() => {
@@ -86,19 +90,56 @@ export default function FreelancerOrdersScreen() {
     })
   }
 
+  const openCompletionModal = (orderId: string | undefined) => {
+    if (!orderId) return
+    setSelectedOrderId(orderId)
+    setCompletionLink("")
+    setModalVisible(true)
+  }
+
+  const handleCompleteOrder = async () => {
+    if (!selectedOrderId || !completionLink.trim()) return
+
+    try {
+      const response = await confirmOrder(selectedOrderId, completionLink.trim())
+      console.log("Order confirmed:", response)
+
+      if (response?.status === "success") {
+        const updatedOrder = response.data.order;
+        setOrders((prevOrders) =>
+          prevOrders.map((order) => 
+            order._id === selectedOrderId 
+              ? { ...order, status: "completed", completionLink: completionLink.trim() } 
+              : order
+          ),
+        )
+
+        if (updatedOrder.clientExpoPushToken) {
+          try {
+            console.log("Sending notification to client:", updatedOrder.clientExpoPushToken,updatedOrder)
+            await sendOrderCompletionNotification(
+              updatedOrder.clientExpoPushToken,
+              updatedOrder.gigID || "1789"
+            );
+            console.log("Notification sent successfully")
+          } catch (error) {
+            console.error("Error sending notification:", error);
+          }
+        }
+
+        setModalVisible(false)
+      }
+    } catch (error) {
+      console.error(`Error completing order:`, error)
+    }
+  }
+
   const handleOrderAction = async (orderId: string | undefined, action: "complete" | "cancel" | "message") => {
     if (!orderId) return
 
     try {
       if (action === "complete") {
-        const response = await confirmOrder(orderId)
-        console.log("Order confirmed:", response)
-
-        if (response?.status === "success") {
-          setOrders((prevOrders) =>
-            prevOrders.map((order) => (order._id === orderId ? { ...order, status: "completed" } : order)),
-          )
-        }
+        openCompletionModal(orderId)
       } else if (action === "cancel") {
         const response = await cancelOrder(orderId)
         console.log("Order cancelled:", response)
@@ -109,8 +150,6 @@ export default function FreelancerOrdersScreen() {
           )
         }
       } else if (action === "message") {
-        // Navigate to chat with client
-        // router.push({ pathname: "/message", params: { orderId } });
       }
     } catch (error) {
       console.error(`Error processing order action (${action}):`, error)
@@ -129,6 +168,49 @@ export default function FreelancerOrdersScreen() {
 
         </TouchableOpacity>
       </View>
+
+      {/* Completion Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/70">
+          <View className="bg-[#111] p-6 rounded-lg w-[90%] max-w-md">
+            <Text className="text-white text-xl font-bold mb-4">Complete Order</Text>
+            <Text className="text-gray-400 mb-4">
+              Please provide a link to the completed work or deliverables
+            </Text>
+            
+            <TextInput
+              className="bg-[#222] text-white p-4 rounded-lg mb-4"
+              placeholder="Enter completion link"
+              placeholderTextColor="#666"
+              value={completionLink}
+              onChangeText={setCompletionLink}
+              autoCapitalize="none"
+            />
+            
+            <View className="flex-row justify-end mt-2">
+              <TouchableOpacity 
+                className="bg-gray-600 px-4 py-2 rounded-md mr-2"
+                onPress={() => setModalVisible(false)}
+              >
+                <Text className="text-white">Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                className={`px-4 py-2 rounded-md ${completionLink.trim() ? 'bg-[#4B7172]' : 'bg-gray-700'}`}
+                onPress={handleCompleteOrder}
+                disabled={!completionLink.trim()}
+              >
+                <Text className="text-white font-bold">Complete Order</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Stats Overview */}
       <View className="flex-row justify-between mx-5 mb-6 px-10">
@@ -258,6 +340,15 @@ export default function FreelancerOrdersScreen() {
                   )}
                 </View>
               </View>
+              
+              {order.status === "completed" && order.completionLink && (
+                <View className="mt-3 pt-3 border-t border-gray-800">
+                  <Text className="text-xs text-gray-500 mb-1">Completion Link:</Text>
+                  <TouchableOpacity>
+                    <Text className="text-sm text-blue-400" numberOfLines={1}>{order.completionLink}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </TouchableOpacity>
           ))
         ) : (

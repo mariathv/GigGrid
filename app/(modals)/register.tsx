@@ -9,6 +9,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Text,
 } from "react-native"
 import { useState, useEffect } from "react"
 import { Stack, Link, useRouter, useLocalSearchParams } from "expo-router"
@@ -28,6 +29,9 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [userType, setUserType] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [nameError, setNameError] = useState<string | null>(null)
 
   const router = useRouter()
   const { signUp } = useAuth()
@@ -40,9 +44,66 @@ export default function RegisterScreen() {
     }
   }, [params.userType])
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const isValid = emailRegex.test(email)
+    setEmailError(isValid ? null : "Please enter a valid email address")
+    return isValid
+  }
+
+  const validateName = (name: string): boolean => {
+    if (name.length < 3) {
+      setNameError("Username too short - minimum 3 characters required")
+      return false
+    }
+    if (name.length > 30) {
+      setNameError("Username too long - maximum 30 characters allowed")
+      return false
+    }
+    setNameError(null)
+    return true
+  }
+
+  const validatePassword = (password: string): boolean => {
+    if (password.length < 8) {
+      setPasswordError("Password too short - minimum 8 characters required")
+      return false
+    }
+    if (password.length > 64) {
+      setPasswordError("Password too long - maximum 64 characters allowed")
+      return false
+    }
+    if (!/[A-Z]/.test(password)) {
+      setPasswordError("Password requires uppercase letter")
+      return false
+    }
+    if (!/[0-9]/.test(password)) {
+      setPasswordError("Password requires number")
+      return false
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      setPasswordError("Password requires special character")
+      return false
+    }
+    setPasswordError(null)
+    return true
+  }
+
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
       alert("Please fill in all fields")
+      return
+    }
+
+    if (!validateName(name)) {
+      return
+    }
+
+    if (!validateEmail(email)) {
+      return
+    }
+
+    if (!validatePassword(password)) {
       return
     }
 
@@ -102,54 +163,76 @@ export default function RegisterScreen() {
             <View style={styles.inputContainer}>
               <ThemedText style={styles.label}>Full Name</ThemedText>
               <TextInput
-                style={styles.input}
+                style={[styles.input, nameError ? styles.inputError : null]}
                 placeholder="Enter your full name"
                 placeholderTextColor="#666"
                 value={name}
-                onChangeText={setName}
+                onChangeText={(text) => {
+                  setName(text)
+                  if (nameError) validateName(text)
+                }}
                 autoCapitalize="words"
                 autoComplete="name"
                 editable={!isLoading}
+                maxLength={30}
               />
+              {nameError && (
+                <ThemedText style={styles.errorText}>{nameError}</ThemedText>
+              )}
+              <Text style={styles.helperText}>{name.length}/30 (minimum 3 characters)</Text>
             </View>
 
             <View style={styles.inputContainer}>
               <ThemedText style={styles.label}>Email</ThemedText>
               <TextInput
-                style={styles.input}
+                style={[styles.input, emailError ? styles.inputError : null]}
                 placeholder="Enter your email"
                 placeholderTextColor="#666"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text)
+                  if (emailError) validateEmail(text)
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
                 editable={!isLoading}
               />
+              {emailError && (
+                <ThemedText style={styles.errorText}>{emailError}</ThemedText>
+              )}
             </View>
 
             <View style={styles.inputContainer}>
               <ThemedText style={styles.label}>Password</ThemedText>
               <View style={styles.passwordContainer}>
                 <TextInput
-                  style={[styles.input, styles.passwordInput]}
-                  placeholder="Create a password"
+                  style={[styles.input, styles.passwordInput, passwordError ? styles.inputError : null]}
+                  placeholder="Enter your password"
                   placeholderTextColor="#666"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text)
+                    if (passwordError) validatePassword(text)
+                  }}
                   secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoComplete="password-new"
+                  autoComplete="new-password"
                   editable={!isLoading}
+                  maxLength={64}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
                 >
-                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={24} color="#fff" />
+                  <Ionicons name={showPassword ? "eye-off" : "eye"} size={24} color="#666" />
                 </TouchableOpacity>
               </View>
+              {passwordError && (
+                <ThemedText style={styles.errorText}>{passwordError}</ThemedText>
+              )}
+              <Text style={styles.helperText}>
+                {password.length}/64 (minimum 8 characters, requires uppercase, number, and special character)
+              </Text>
             </View>
 
             <View style={styles.inputContainer}>
@@ -288,6 +371,24 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.7,
+  },
+  inputError: {
+    borderColor: '#ff4444',
+  },
+  errorText: {
+    color: '#ff4444',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  passwordHint: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  helperText: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
   },
 })
 

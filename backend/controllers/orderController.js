@@ -1,11 +1,13 @@
 const Order = require("./../models/order")
 const Gig = require('./../models/gig');
 const Chat = require('./../models/chat');
+const User = require('./../models/user');
 const catchAsync = require("./../utils/catchAsync")
 const AppError = require("./../utils/appError");
 const e = require("express");
 const APIFeatures = require("./../utils/apiFeatures")
 const Review = require('../models/review');
+const { sendNewOrderNotification } = require('../utils/notifications');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
     const { gigID, selectedPackage } = req.body; 
@@ -19,6 +21,13 @@ exports.createOrder = catchAsync(async (req, res, next) => {
     if (!gig) {
         return next(new AppError('No gig found with that ID', 404));
     }
+
+    // Get freelancer's push token
+    const freelancer = await User.findById(gig.userID);
+    if (!freelancer) {
+        return next(new AppError('Freelancer not found', 404));
+    }
+    const freelancerExpoPushToken = freelancer.expoPushToken || "";
 
     const packageDetails = gig[selectedPackage];
     if (!packageDetails) {
@@ -35,8 +44,23 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         selectedPackage,
         status: "pending",
         createdAt: currentTime,
-        deliveryTime: deliveryTime
-    })
+        deliveryTime: deliveryTime,
+        clientExpoPushToken: clientExpoPushToken || "",
+        freelancerExpoPushToken: freelancerExpoPushToken
+    });
+
+    // Send notification to freelancer if they have a push token
+    if (freelancerExpoPushToken) {
+        try {
+            console.log("Sending notification to freelancer:", gig.title);
+            await sendNewOrderNotification(freelancerExpoPushToken, gig.title);
+        } catch (error) {
+            console.error('Error sending push notification to freelancer:', error);
+            // Don't throw error here as the order is already created
+        }
+    } else {
+        console.log("Freelancer does not have a push token");
+    }
 
     // Create a new chat for this order
     await Chat.create({
@@ -81,6 +105,7 @@ exports.getClientOrders = catchAsync(async (req, res, next) => {
                 status: order.status,
                 createdAt: order.createdAt,
                 deliveryTime: order.deliveryTime,
+                completionLink: order.completionLink,
                 gig: {
                     title: gig.title,
                     description: gig.description,
@@ -207,11 +232,15 @@ exports.getOrder = catchAsync(async (req, res, next) => {
         status: order.status,
         createdAt: order.createdAt,
         deliveryTime: order.deliveryTime,
+        completionLink: order.completionLink,
         gig: {
             title: gig.title,
             description: gig.description,
             category: gig.category,
             tags: gig.tags,
+            images: gig.images,
+            rating: gig.rating,
+            minPrice: gig.minPrice,
             selectedPackage: {
                 type: selectedPackageType,
                 description: selectedPackage.description,
@@ -235,6 +264,7 @@ exports.getOrder = catchAsync(async (req, res, next) => {
 exports.confirmOrder = catchAsync(async (req, res, next) => {
     const orderID = req.params.id;
     const userID = req.user._id;
+    const { completionLink } = req.body;
 
     const order = await Order.findById(orderID);
 
@@ -246,7 +276,12 @@ exports.confirmOrder = catchAsync(async (req, res, next) => {
         return next(new AppError(`You are not authorized to confirm this order`, 403));
     }
 
+    if (!completionLink) {
+        return next(new AppError('Completion link is required', 400));
+    }
+
     order.status = "completed";
+    order.completionLink = completionLink;
     await order.save();
 
     res.status(200).json({

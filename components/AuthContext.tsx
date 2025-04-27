@@ -78,15 +78,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (segments[1] === "login" || segments[1] === "register" || segments[1] === "user-type")
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/login")
-    } else if (isAuthenticated && inAuthGroup && user?.userType == "Freelancer") {
-      console.log("redirecting to freelancer tabs")
-      router.replace("/(tabs)")
-    } else if (isAuthenticated && inAuthGroup && user?.userType == "Client") {
-      console.log("redirecting to client tabs")
-      router.replace("/(client)")
+      // Use setTimeout to ensure navigation happens after layout is mounted
+      setTimeout(() => {
+        router.replace("/login")
+      }, 0)
+    } else if (isAuthenticated && inAuthGroup) {
+      // Use setTimeout to ensure navigation happens after layout is mounted
+      setTimeout(() => {
+        if (user?.userType === "Freelancer") {
+          console.log("redirecting to freelancer tabs")
+          router.replace("/(tabs)")
+        } else if (user?.userType === "Client") {
+          console.log("redirecting to client tabs")
+          router.replace("/(client)")
+        }
+      }, 0)
     }
-  }, [isAuthenticated, segments, isLoading])
+  }, [isAuthenticated, segments, isLoading, user?.userType])
 
   const signIn = async (email: string, password: string, rememberMe = false) => {
     try {
@@ -113,13 +121,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userType: response.data.user.userType,
         }
 
-        setUser(userData)
-        setToken(response.token)
-        setGlobalAuthToken(response.token)
-        setIsAuthenticated(true)
+        // Set state in the next tick to avoid immediate navigation
+        const token = response.token
+        setTimeout(() => {
+          setUser(userData)
+          setToken(token)
+          setGlobalAuthToken(token)
+          setIsAuthenticated(true)
+        }, 0)
 
         if (rememberMe) {
-          await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token)
+          await AsyncStorage.setItem(AUTH_TOKEN_KEY, token)
           await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData))
         }
 
@@ -171,8 +183,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData))
         }
 
-        setUser(userData)
-        setIsAuthenticated(true)
+        // Set state in the next tick to avoid immediate navigation
+        setTimeout(() => {
+          setUser(userData)
+          setIsAuthenticated(true)
+        }, 0)
+
         return true
       } else {
         throw new Error("Registration failed")

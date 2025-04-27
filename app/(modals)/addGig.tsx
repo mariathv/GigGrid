@@ -96,8 +96,13 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
 
-        if (!title || title.length < 10) {
-            newErrors.title = "Title must be at least 10 characters";
+        // Title validation (5-70 characters)
+        if (!title) {
+            newErrors.title = "Title is required";
+        } else if (title.length < 5) {
+            newErrors.title = "Title too short - minimum 5 characters required";
+        } else if (title.length > 70) {
+            newErrors.title = "Title too long - maximum 70 characters allowed";
         }
 
         if (!description || description.length < 50) {
@@ -118,12 +123,22 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
             newErrors.packageDescription = "Basic package description must be at least 20 characters";
         }
 
-        if (basicPackage.price <= 0) {
-            newErrors.packagePrice = "Basic package price must be greater than 0";
+        // Price validation
+        if (isNaN(basicPackage.price) || typeof basicPackage.price !== 'number') {
+            newErrors.packagePrice = "Price must be numeric";
+        } else if (basicPackage.price < 5) {
+            newErrors.packagePrice = "Price must be at least $5";
+        } else if (basicPackage.price > 10000) {
+            newErrors.packagePrice = "Price cannot exceed $10,000";
         }
 
-        if (basicPackage.deliveryTime <= 0) {
-            newErrors.packageDeliveryTime = "Basic package delivery time must be greater than 0";
+        // Delivery time validation (1-90 days)
+        if (!Number.isInteger(basicPackage.deliveryTime)) {
+            newErrors.packageDeliveryTime = "Delivery time must be a whole number";
+        } else if (basicPackage.deliveryTime < 1) {
+            newErrors.packageDeliveryTime = "Delivery time must be at least 1 day";
+        } else if (basicPackage.deliveryTime > 90) {
+            newErrors.packageDeliveryTime = "Delivery time cannot exceed 90 days";
         }
 
         setErrors(newErrors);
@@ -242,6 +257,24 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
         setTags(tags.filter((_, i) => i !== index));
     };
 
+    const handlePriceChange = (text: string, packageType: PackageType) => {
+        const numericValue = text.replace(/[^0-9.]/g, '');
+        const price = parseFloat(numericValue) || 0;
+        
+        // Update the package with the new price
+        updatePackageField('price', price);
+    };
+
+    const handleDeliveryTimeChange = (text: string, packageType: PackageType) => {
+        // Remove any non-numeric characters
+        const numericValue = text.replace(/[^0-9]/g, '');
+        // Convert to integer
+        const days = parseInt(numericValue) || 0;
+        
+        // Update the package with the new delivery time
+        updatePackageField('deliveryTime', days);
+    };
+
     const styles = createStyles(theme.colors.text, theme.colors.background);
 
     const renderPackageTabs = () => (
@@ -314,12 +347,13 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
                         placeholder="Enter price for this package"
                         placeholderTextColor="#666"
                         value={currentPackage.price > 0 ? currentPackage.price.toString() : ""}
-                        onChangeText={(text) => updatePackageField('price', parseFloat(text) || 0)}
+                        onChangeText={(text) => handlePriceChange(text, activePackage)}
                         keyboardType="numeric"
                     />
                     {activePackage === 'basic' && errors.packagePrice &&
                         <Text style={styles.errorText}>{errors.packagePrice}</Text>
                     }
+                    <Text style={styles.helperText}>Price must be between $5 and $10,000</Text>
                 </View>
 
                 <View style={styles.formGroup}>
@@ -329,12 +363,13 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
                         placeholder="How many days to deliver?"
                         placeholderTextColor="#666"
                         value={currentPackage.deliveryTime > 0 ? currentPackage.deliveryTime.toString() : ""}
-                        onChangeText={(text) => updatePackageField('deliveryTime', parseInt(text) || 0)}
+                        onChangeText={(text) => handleDeliveryTimeChange(text, activePackage)}
                         keyboardType="numeric"
                     />
                     {activePackage === 'basic' && errors.packageDeliveryTime &&
                         <Text style={styles.errorText}>{errors.packageDeliveryTime}</Text>
                     }
+                    <Text style={styles.helperText}>Delivery time must be between 1-90 days</Text>
                 </View>
 
                 <View style={styles.formGroup}>
@@ -414,10 +449,10 @@ const AddGig: React.FC<AddGigProps> = ({ onClose, onSubmit }) => {
                                     placeholderTextColor="#666"
                                     value={title}
                                     onChangeText={setTitle}
-                                    maxLength={100}
+                                    maxLength={70}
                                 />
                                 {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-                                <Text style={styles.helperText}>{title.length}/100 (minimum 10 characters)</Text>
+                                <Text style={styles.helperText}>{title.length}/70 (minimum 5 characters)</Text>
                             </View>
 
                             <View style={styles.formGroup}>

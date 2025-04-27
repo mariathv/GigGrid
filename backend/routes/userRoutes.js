@@ -50,8 +50,8 @@ router.get("/user/:userid/pfp", userController.getPfp);
 router.get("/user/:userid", userController.getUser);
 
 
-router.post(
-  "/user/update",
+router.put(
+  "/users/update",
   authController.protect,
   userController.updateUser
 );

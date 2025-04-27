@@ -8,13 +8,12 @@ import { ThemedText } from "@/components/ThemedText"
 import { ThemedView } from "@/components/ThemedView"
 import "@/global.css"
 import { useAuth } from "@/components/AuthContext"
-import { placeGigOrder } from "@/api/orders"
+import { createOrder } from "@/api/orders"
 
 export default function OrderConfirmationScreen() {
     const router = useRouter()
     const params = useLocalSearchParams()
     const { user } = useAuth();
-
 
     const [requirements, setRequirements] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -23,13 +22,10 @@ export default function OrderConfirmationScreen() {
         try {
             setIsSubmitting(true);
 
-            const bodyData = {
-                gigID: params.gigId,
-                clientID: user?.id,
-                selectedPackage: params.package,
-            };
-
-            const response = await placeGigOrder(bodyData);
+            const response = await createOrder(
+                params.gigId as string,
+                params.package as string
+            );
 
             if (response?.status === "success") {
                 const orderId = response.data?.order?._id;

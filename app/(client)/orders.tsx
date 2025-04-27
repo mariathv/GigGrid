@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native"
+import React, { useState, useCallback } from "react"
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Linking } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useFocusEffect, useRouter } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
@@ -22,13 +22,19 @@ export default function OrdersScreen() {
         try {
           setIsLoading(true)
           const response = await getAllMyOrders_Client()
-          console.log(response)
-
+          console.log("Client orders response:", response)
+          
           if (response?.status === "success") {
             setOrders(response.data.orders)
+            
+            // Debug log to check completion links
+            const completedOrdersWithLinks = response.data.orders.filter(
+              (order: Order) => order.status === "completed" && order.completionLink
+            )
+            console.log("Completed orders with links:", completedOrdersWithLinks)
           }
         } catch (error) {
-          console.error("Error fetching featured gigs:", error)
+          console.error("Error fetching client orders:", error)
         } finally {
           setIsLoading(false)
         }
@@ -168,36 +174,59 @@ export default function OrdersScreen() {
                   </ThemedText>
                 </View>
 
-                {order.status === "completed" && (
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/review-order",
-                        params: {
-                          orderId: order._id,
-                          gigId: order.gigID,
-                          gigTitle: order.gig?.title,
-                        },
-                      })
-                    }
-                  >
-                    <ThemedText style={styles.actionButtonText}>Review</ThemedText>
-                  </TouchableOpacity>
-                )}
+                <View style={styles.actionButtonsContainer}>
+                  {order.status === "completed" && (
+                    <>
+                      {order.completionLink && (
+                        <TouchableOpacity 
+                          style={styles.linkButton}
+                          onPress={() => {
+                            // Ensure the link has http/https prefix
+                            const url = order.completionLink?.startsWith('http') 
+                              ? order.completionLink 
+                              : `https://${order.completionLink}`;
+                            
+                            // Use the Linking API to open the URL
+                            Linking.openURL(url).catch((error: Error) => {
+                              console.error('Error opening URL:', error);
+                            });
+                          }}
+                        >
+                          <Ionicons name="link-outline" size={14} color="#4B7172" />
+                          <ThemedText style={styles.linkButtonText}>View Delivery</ThemedText>
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/review-order",
+                            params: {
+                              orderId: order._id,
+                              gigId: order.gigID,
+                              gigTitle: order.gig?.title,
+                            },
+                          })
+                        }
+                      >
+                        <ThemedText style={styles.actionButtonText}>Review</ThemedText>
+                      </TouchableOpacity>
+                    </>
+                  )}
 
-                {order.status === "pending" && (
-                  <TouchableOpacity
-                    style={styles.messageButton}
-                    // onPress={() => router.push({
-                    //     pathname: "/messages",
-                    //     params: { freelancerId: order.freelancerId }
-                    // })}
-                  >
-                    <Ionicons name="chatbubble-outline" size={16} color="#4B7172" />
-                    <ThemedText style={styles.messageButtonText}>Message</ThemedText>
-                  </TouchableOpacity>
-                )}
+                  {order.status === "pending" && (
+                    <TouchableOpacity
+                      style={styles.messageButton}
+                      // onPress={() => router.push({
+                      //     pathname: "/messages",
+                      //     params: { freelancerId: order.freelancerId }
+                      // })}
+                    >
+                      <Ionicons name="chatbubble-outline" size={16} color="#4B7172" />
+                      <ThemedText style={styles.messageButtonText}>Message</ThemedText>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </TouchableOpacity>
           ))
@@ -409,6 +438,27 @@ const styles = StyleSheet.create({
   browseButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  linkButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(75, 113, 114, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#4B7172",
+  },
+  linkButtonText: {
+    color: "#4B7172",
+    fontSize: 12,
+    fontWeight: "bold",
+    marginLeft: 4,
+  },
+  actionButtonsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 })
 

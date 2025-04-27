@@ -5,19 +5,66 @@ const bcrypt = require("bcryptjs")
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
-        require: [true, "A user must have a email"],
+        required: [true, "Email address is required"],
         unique: true,
         lowercase: true,
-        validator: [validator.isEmail, "Please provide a valid email"]
+        validate: [
+            {
+                validator: validator.isEmail,
+                message: "Please provide a valid email address"
+            },
+            {
+                validator: function(email) {
+                    // Additional custom validation if needed
+                    const domain = email.split('@')[1];
+                    // Check if domain has at least one dot
+                    return domain && domain.includes('.');
+                },
+                message: "Email domain appears to be invalid"
+            }
+        ],
+        trim: true
     },
     name: {
         type: String,
-        requires: [true, "A user must have a name"],
+        required: [true, "A user must have a name"],
+        minlength: [3, "Username too short - minimum 3 characters required"],
+        maxlength: [30, "Username too long - maximum 30 characters allowed"],
+        validate: {
+            validator: function(value) {
+                return value.length >= 3 && value.length <= 30;
+            },
+            message: props => 
+                props.value.length < 3 ? "Username too short" :
+                props.value.length > 30 ? "Username too long" :
+                "Invalid username length"
+        }
     },
     password: {
         type: String,
-        required: [true, "A user must have a password"],
-        minlength: 7,
+        required: [true, "Password is required"],
+        minlength: [8, "Password too short - minimum 8 characters required"],
+        maxlength: [64, "Password too long - maximum 64 characters allowed"],
+        validate: [
+            {
+                validator: function(password) {
+                    return /[A-Z]/.test(password);
+                },
+                message: "Password requires uppercase letter"
+            },
+            {
+                validator: function(password) {
+                    return /[0-9]/.test(password);
+                },
+                message: "Password requires number"
+            },
+            {
+                validator: function(password) {
+                    return /[!@#$%^&*(),.?":{}|<>]/.test(password);
+                },
+                message: "Password requires special character"
+            }
+        ],
         select: false
     },
     passwordConfirm: {
@@ -34,6 +81,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["Freelancer", "Client"],
         default: "Client"
+    },
+    expoPushToken: {
+        type: String,
+        default: ""
     },
     passwordChangedAt: Date,
     pfp: {

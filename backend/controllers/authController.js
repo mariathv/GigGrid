@@ -11,23 +11,35 @@ const signTokken = id => {
 }
 
 exports.register = catchAsync(async (req, res, next) => {
-  const newUser = await user.create({
-    email: req.body.email,
-    name: req.body.name,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-    userType: req.body.userType,
-  });
+  try {
+    const newUser = await user.create({
+      email: req.body.email,
+      name: req.body.name,
+      password: req.body.password,
+      passwordConfirm: req.body.passwordConfirm,
+      userType: req.body.userType,
+    });
 
-  const token = signTokken(newUser._id)
+    const token = signTokken(newUser._id)
 
-  res.status(201).json({
-    status: "success",
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+    res.status(201).json({
+      status: "success",
+      token,
+      data: {
+        user: newUser,
+      },
+    });
+  } catch (error) {
+    if (error.code === 11000 && error.keyPattern?.email) {
+      return next(new AppError("Email address is already registered", 400));
+    }
+    
+    if (error.errors?.email) {
+      return next(new AppError(error.errors.email.message, 400));
+    }
+
+    next(error);
+  }
 });
 
 exports.login = catchAsync(async (req, res, next) => {

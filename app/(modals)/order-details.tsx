@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
+import React, { useState, useEffect } from "react"
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter, useLocalSearchParams } from "expo-router"
 import { ThemedText } from "@/components/ThemedText"
@@ -26,9 +26,11 @@ export default function OrderDetailsScreen() {
       try {
         setIsLoading(true)
         const response = await getOrderById(orderId)
+        console.log("Order details response:", response)
 
         if (response?.status === "success"){
           setOrder(response.data.orders)
+          console.log("Order completion link:", response.data.orders.completionLink)
         } else {
           Alert.alert("Error", "Failed to load order details")
         }
@@ -224,6 +226,32 @@ export default function OrderDetailsScreen() {
                   {/* <ThemedText style={styles.timelineDate}>{formatDate(order.updatedAt)}</ThemedText> */}
                 </View>
               </View>
+              
+              {order.completionLink && (
+                <View style={styles.deliverableContainer}>
+                  <ThemedText style={styles.deliverableTitle}>Delivered Work</ThemedText>
+                  <TouchableOpacity 
+                    style={styles.deliverableLink}
+                    onPress={() => {
+                      // Open link in browser
+                      if (order.completionLink) {
+                        const url = order.completionLink.startsWith('http') 
+                          ? order.completionLink 
+                          : `https://${order.completionLink}`;
+                        
+                        // Use the Linking API from react-native
+                        Linking.openURL(url).catch((err: Error) => {
+                          console.error('Error opening URL:', err);
+                          Alert.alert('Error', 'Could not open the link');
+                        });
+                      }
+                    }}
+                  >
+                    <Ionicons name="link-outline" size={18} color="#FFFFFF" />
+                    <ThemedText style={styles.deliverableLinkText}>View Completion Link</ThemedText>
+                  </TouchableOpacity>
+                </View>
+              )}
             </>
           )}
           {order.status === "cancelled" && (
@@ -518,6 +546,35 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginLeft: 10,
+  },
+  deliverableContainer: {
+    marginTop: 15,
+    marginLeft: 30,
+    padding: 15,
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+  },
+  deliverableTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#333",
+  },
+  deliverableLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4B7172",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  deliverableLinkText: {
+    fontSize: 14,
+    color: "#FFFFFF",
+    marginLeft: 5,
+    fontWeight: "bold",
   },
 })
 

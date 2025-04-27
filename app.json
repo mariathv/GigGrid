@@ -36,6 +36,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "30d20816-69f7-4a6f-88d0-6fc7c460d97c"
+      }
+    },
+    "owner": "kaguyasmo"
   }
 }

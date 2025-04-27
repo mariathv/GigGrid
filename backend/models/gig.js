@@ -10,12 +10,29 @@ const packageSchema = new mongoose.Schema({
     },
     price: {
         type: Number,
-        required: [true, "A Package must have a price"]
+        required: [true, "A Package must have a price"],
+        min: [5, "Price must be at least $5"],
+        max: [10000, "Price cannot exceed $10,000"],
+        validate: {
+            validator: function(value) {
+                // Check if the value is numeric and within range
+                return !isNaN(value) && typeof value === 'number';
+            },
+            message: "Price must be numeric"
+        }
     },
     deliveryTime: {
         type: Number,
         required: [true, "A Package must have a delivery time"],
-        default: 1
+        min: [1, "Delivery time must be at least 1 day"],
+        max: [90, "Delivery time cannot exceed 90 days"],
+        validate: {
+            validator: function(value) {
+                // Check if the value is a whole number
+                return Number.isInteger(value);
+            },
+            message: "Delivery time must be a whole number"
+        }
     },
     numberOfRevisions: {
         type: Number,
@@ -34,13 +51,33 @@ const gigSchema = new mongoose.Schema(
         title: {
             type: String,
             required: [true, "A gig must have a title"],
+            minlength: [5, "Title too short - minimum 5 characters required"],
+            maxlength: [70, "Title too long - maximum 70 characters allowed"],
+            validate: {
+                validator: function(value) {
+                    return value.length >= 5 && value.length <= 70;
+                },
+                message: props => 
+                    props.value.length < 5 ? "Title too short" :
+                    props.value.length > 70 ? "Title too long" :
+                    "Invalid title length"
+            }
         },
         slug: String,
         description: {
             type: String,
             required: [true, "A gig must have a description"],
-            maxlength: 1000,
-            minlength: 50,
+            maxlength: [5000, "Message exceeds maximum length"],
+            minlength: [1, "Message cannot be empty"],
+            validate: {
+                validator: function(value) {
+                    return value.length >= 1 && value.length <= 5000;
+                },
+                message: props => 
+                    props.value.length < 1 ? "Message cannot be empty" :
+                    props.value.length > 5000 ? "Message exceeds maximum length" :
+                    "Invalid message length"
+            }
         },
         category: {
             type: String,
