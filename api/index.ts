@@ -16,7 +16,9 @@ export const setGlobalAuthToken = (token: string | null) => {
 };
 
 api.interceptors.request.use(
+   
     async (config) => {
+        console.log(API_BASE_URL);
         const tokenToUse = latestToken || await AsyncStorage.getItem('auth_token');
         if (tokenToUse) {
             config.headers.Authorization = `Bearer ${tokenToUse}`;

@@ -8,6 +8,8 @@ export type Order = {
     createdAt?: string | Date;
     deliveryTime?: string | Date;
     completionLink?: string;
+    clientExpoPushToken?: string;
+    freelancerExpoPushToken?: string;
     gig?: {
         title: string;
         description: string;

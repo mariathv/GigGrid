@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
         enum: ["Freelancer", "Client"],
         default: "Client"
     },
+    expoPushToken: {
+        type: String,
+        default: ""
+    },
     passwordChangedAt: Date,
     pfp: {
         filename: String,

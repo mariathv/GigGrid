@@ -1,4 +1,5 @@
 import api from './index';
+import { registerForPushNotificationsAsync } from "./expo-notifications/notif";
 
 export const getMyRecentOrders_Client = async () => {
     try {
@@ -40,15 +41,22 @@ export const getAllMyOrders_Freelancer = async () => {
     }
 }
 
-export const placeGigOrder = async (bodyData: any) => {
+export const createOrder = async (gigID: string, selectedPackage: string) => {
     try {
-        const response = await api.post('orders/', bodyData);
+        // Get the client's push token
+        const clientExpoPushToken = await registerForPushNotificationsAsync();
+
+        const response = await api.post('orders', {
+            gigID,
+            selectedPackage,
+            clientExpoPushToken
+        });
         return response.data;
     } catch (error: any) {
-        console.error('create order failed:', error?.response?.data || error.message);
+        console.error('Create order failed:', error?.response?.data || error.message);
         throw error;
     }
-}
+};
 
 export const confirmOrder = async (orderId: string, completionLink: string) => {
     try {

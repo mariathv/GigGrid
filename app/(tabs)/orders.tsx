@@ -11,6 +11,7 @@ import "@/global.css"
 import type { OrderStatus, Order } from "@/types/order"
 import { getAllMyOrders_Freelancer } from "@/api/orders"
 import { confirmOrder, cancelOrder } from "@/api/orders"
+import { sendOrderCompletionNotification } from "@/api/expo-notifications/notif"
 
 export default function FreelancerOrdersScreen() {
   const router = useRouter()
@@ -104,6 +105,7 @@ export default function FreelancerOrdersScreen() {
       console.log("Order confirmed:", response)
 
       if (response?.status === "success") {
+        const updatedOrder = response.data.order;
         setOrders((prevOrders) =>
           prevOrders.map((order) => 
             order._id === selectedOrderId 
@@ -111,6 +113,20 @@ export default function FreelancerOrdersScreen() {
               : order
           ),
         )
+
+        if (updatedOrder.clientExpoPushToken) {
+          try {
+            console.log("Sending notification to client:", updatedOrder.clientExpoPushToken,updatedOrder)
+            await sendOrderCompletionNotification(
+              updatedOrder.clientExpoPushToken,
+              updatedOrder.gigID || "1789"
+            );
+            console.log("Notification sent successfully")
+          } catch (error) {
+            console.error("Error sending notification:", error);
+          }
+        }
+
         setModalVisible(false)
       }
     } catch (error) {
@@ -134,8 +150,6 @@ export default function FreelancerOrdersScreen() {
           )
         }
       } else if (action === "message") {
-        // Navigate to chat with client
-        // router.push({ pathname: "/message", params: { orderId } });
       }
     } catch (error) {
       console.error(`Error processing order action (${action}):`, error)

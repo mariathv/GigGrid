@@ -1,4 +1,3 @@
-
 const User = require("../models/user")
 const { default: mongoose } = require("mongoose")
 const { getBucket } = require("../utils/gridfs");
@@ -86,30 +85,40 @@ const userController = {
             res.status(500).send("Internal Server Error");
         }
     },
-    updateUser: async (req, res, next) => {
-        const { name } = req.body;
-
-        if (!name) {
-            return next(new AppError("Name is required", 400));
+    updateUser: catchAsync(async (req, res, next) => {
+        const { name, expoPushToken } = req.body;
+        
+        if (!name && !expoPushToken) {
+            return next(new AppError("Please provide name or expoPushToken to update", 400));
         }
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user._id,
-            { name },
-            { new: true, runValidators: true }
-        )
-
-        if (!updatedUser) {
-            return next(new AppError("User not found", 400));
+        const updateFields = {};
+        if (name) {
+            if (name.length < 1) {
+                return next(new AppError("Name cannot be empty", 400));
+            }
+            updateFields.name = name;
         }
+        if (expoPushToken !== undefined) {
+            updateFields.expoPushToken = expoPushToken;
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            updateFields,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
 
         res.status(200).json({
             status: "success",
             data: {
-                user: updatedUser
+                user
             }
         });
-    },
+    }),
     getUser: async (req, res, next) => {
         try {
             const userId = req.params.userid;

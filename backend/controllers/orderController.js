@@ -1,14 +1,16 @@
 const Order = require("./../models/order")
 const Gig = require('./../models/gig');
+const User = require('./../models/user');
 const catchAsync = require("./../utils/catchAsync")
 const AppError = require("./../utils/appError");
 const e = require("express");
 const APIFeatures = require("./../utils/apiFeatures")
 const Review = require('../models/review');
+const { sendNewOrderNotification } = require('../utils/notifications');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
-    const { gigID, selectedPackage } = req.body;
-    const clientID = req.user._id
+    const { gigID, selectedPackage, clientExpoPushToken } = req.body;
+    const clientID = req.user._id;
 
     if (!gigID || !clientID || !selectedPackage) {
         return next(new AppError('gigID, clientID, and selectedPackage are required', 400));
@@ -18,6 +20,13 @@ exports.createOrder = catchAsync(async (req, res, next) => {
     if (!gig) {
         return next(new AppError('No gig found with that ID', 404));
     }
+
+    // Get freelancer's push token
+    const freelancer = await User.findById(gig.userID);
+    if (!freelancer) {
+        return next(new AppError('Freelancer not found', 404));
+    }
+    const freelancerExpoPushToken = freelancer.expoPushToken || "";
 
     const packageDetails = gig[selectedPackage];
     if (!packageDetails) {
@@ -34,8 +43,23 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         selectedPackage,
         status: "pending",
         createdAt: currentTime,
-        deliveryTime: deliveryTime
-    })
+        deliveryTime: deliveryTime,
+        clientExpoPushToken: clientExpoPushToken || "",
+        freelancerExpoPushToken: freelancerExpoPushToken
+    });
+
+    // Send notification to freelancer if they have a push token
+    if (freelancerExpoPushToken) {
+        try {
+            console.log("Sending notification to freelancer:", gig.title);
+            await sendNewOrderNotification(freelancerExpoPushToken, gig.title);
+        } catch (error) {
+            console.error('Error sending push notification to freelancer:', error);
+            // Don't throw error here as the order is already created
+        }
+    } else {
+        console.log("Freelancer does not have a push token");
+    }
 
     res.status(201).json({
         status: 'success',

@@ -32,6 +32,14 @@ const orderSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    clientExpoPushToken: {
+        type: String,
+        default: ""
+    },
+    freelancerExpoPushToken: {
+        type: String,
+        default: ""
+    },
     createdAt : {
         type : Date
     },
