@@ -158,8 +158,13 @@ export default function EditGigScreen() {
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {}
 
-        if (!title || title.length < 10) {
-            newErrors.title = "Title must be at least 10 characters"
+        // Title validation (5-70 characters)
+        if (!title) {
+            newErrors.title = "Title is required"
+        } else if (title.length < 5) {
+            newErrors.title = "Title too short - minimum 5 characters required"
+        } else if (title.length > 70) {
+            newErrors.title = "Title too long - maximum 70 characters allowed"
         }
 
         if (!description || description.length < 50) {
@@ -180,12 +185,22 @@ export default function EditGigScreen() {
             newErrors.packageDescription = "Basic package description must be at least 20 characters"
         }
 
-        if (basicPackage.price <= 0) {
-            newErrors.packagePrice = "Basic package price must be greater than 0"
+        // Price validation
+        if (isNaN(basicPackage.price) || typeof basicPackage.price !== 'number') {
+            newErrors.packagePrice = "Price must be numeric"
+        } else if (basicPackage.price < 5) {
+            newErrors.packagePrice = "Price must be at least $5"
+        } else if (basicPackage.price > 10000) {
+            newErrors.packagePrice = "Price cannot exceed $10,000"
         }
 
-        if (basicPackage.deliveryTime <= 0) {
-            newErrors.packageDeliveryTime = "Basic package delivery time must be greater than 0"
+        // Delivery time validation (1-90 days)
+        if (!Number.isInteger(basicPackage.deliveryTime)) {
+            newErrors.packageDeliveryTime = "Delivery time must be a whole number"
+        } else if (basicPackage.deliveryTime < 1) {
+            newErrors.packageDeliveryTime = "Delivery time must be at least 1 day"
+        } else if (basicPackage.deliveryTime > 90) {
+            newErrors.packageDeliveryTime = "Delivery time cannot exceed 90 days"
         }
 
         setErrors(newErrors)
@@ -336,16 +351,16 @@ export default function EditGigScreen() {
                                 <View className="mb-4">
                                     <ThemedText className="text-sm font-semibold mb-2 text-gray-300">Gig Title</ThemedText>
                                     <TextInput
-                                        className={`bg-[#222]  text-white p-3 rounded-lg ${errors.title ? "border border-red-500" : ""}`}
+                                        className={`bg-[#222] text-white p-3 rounded-lg ${errors.title ? "border border-red-500" : ""}`}
                                         placeholder="Enter a catchy title for your service"
                                         placeholderTextColor="#777"
                                         value={title}
                                         onChangeText={setTitle}
-                                        maxLength={100}
+                                        maxLength={70}
                                     />
                                     {errors.title && <ThemedText className="text-red-500 text-xs mt-1">{errors.title}</ThemedText>}
                                     <ThemedText className="text-xs text-gray-400 mt-1">
-                                        {title?.length || 0}/100 (minimum 10 characters)
+                                        {title?.length || 0}/70 (minimum 5 characters)
                                     </ThemedText>
                                 </View>
 
