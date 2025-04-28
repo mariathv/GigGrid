@@ -14,10 +14,12 @@ import { getMyGigs } from "@/api/gigs"
 import { getAllMyOrders_Freelancer, getMyRecentOrders_Freelancer } from "@/api/orders"
 import { Order } from "@/types/order"
 import { getFreelancerEarnings } from "@/api/user"
+import { useAuth } from "@/components/AuthContext"
 
 
 
 export default function HomeScreen() {
+  const { isAuthenticated } = useAuth()
 
   const [myGigs, setGigs] = useState<GigData[]>([])
   const [initialLoading, setInitialLoading] = useState(true)
@@ -25,6 +27,14 @@ export default function HomeScreen() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [monthlyEarning, setEarning] = useState(null);
   const [earningMonth, setEarningMonth] = useState(null);
+
+  useEffect(() => {
+    console.log("isAuthenticated", isAuthenticated)
+    if (!isAuthenticated) {
+      router.replace("/login")
+    }
+  }, [isAuthenticated])
+
 
   useFocusEffect(
     useCallback(() => {

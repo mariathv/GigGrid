@@ -77,12 +77,11 @@ export default function MessagesScreen() {
     useEffect(() => {
         fetchChats()
         
-        // If there's a freelancerId in params, navigate to that conversation
         if (params.freelancerId) {
             const conversation = conversations.find(c => c.freelancerId === params.freelancerId)
             if (conversation) {
                 router.push({
-                    pathname: "/(client)/chat",
+                    pathname: "/chat",
                     params: {
                         id: conversation.id,
                         freelancerId: conversation.freelancerId,
@@ -91,6 +90,8 @@ export default function MessagesScreen() {
                         orderTitle: conversation.orderTitle
                     }
                 })
+            }else{
+                console.log("no found");
             }
         }
     }, [params.freelancerId])
@@ -162,7 +163,7 @@ export default function MessagesScreen() {
                             key={conversation.id}
                             style={styles.conversationCard}
                             onPress={() => router.push({
-                                pathname: "/(client)/chat",
+                                pathname: "/chat",
                                 params: {
                                     id: conversation.id,
                                     freelancerId: conversation.freelancerId,

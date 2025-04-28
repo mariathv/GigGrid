@@ -1,4 +1,4 @@
-import api from './index';
+import api from './index'
 
 // Type definitions based on backend models
 export interface Message {

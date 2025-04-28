@@ -1,12 +1,11 @@
 "use client"
 
 import type React from "react"
-import { createContext, useState, useContext, useEffect } from "react"
-import { useRouter, useSegments } from "expo-router"
+import { createContext, useState, useContext, useEffect, useCallback, useRef } from "react"
+import { useFocusEffect, useRouter, useSegments } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { apiRequest } from "@/hooks/api/api-gg"
 import { setGlobalAuthToken } from "@/api"
-
 // Storage keys
 const AUTH_TOKEN_KEY = "auth_token"
 export const USER_DATA_KEY = "user_data"
@@ -32,7 +31,7 @@ type AuthState = {
 const AuthContext = createContext<AuthState>({
   isAuthenticated: false,
   user: null,
-  token: null, // ✅ Add this line
+  token: null, 
   signIn: async () => false,
   signUp: async () => false,
   signOut: () => { },
@@ -47,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter()
   const segments = useSegments()
+  const initialRenderRef = useRef(true);
 
   // Check for existing token on startup
   useEffect(() => {
@@ -70,31 +70,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkToken()
   }, [])
 
+  const [isAppMounted, setIsAppMounted] = useState(false);
+
   useEffect(() => {
-    if (isLoading) return
+    setIsAppMounted(true);
+  }, []);
 
-    const inAuthGroup =
-      segments[0] === "(modals)" &&
-      (segments[1] === "login" || segments[1] === "register" || segments[1] === "user-type")
+useFocusEffect(
+  useCallback(() => {
+    const handleNavigation = async () => {
+      // Skip on initial render
+      if (initialRenderRef.current) {
+        initialRenderRef.current = false;
+        return;
+      }
 
-    if (!isAuthenticated && !inAuthGroup) {
-      // Use setTimeout to ensure navigation happens after layout is mounted
-      setTimeout(() => {
-        router.replace("/login")
-      }, 0)
-    } else if (isAuthenticated && inAuthGroup) {
-      // Use setTimeout to ensure navigation happens after layout is mounted
-      setTimeout(() => {
-        if (user?.userType === "Freelancer") {
-          console.log("redirecting to freelancer tabs")
-          router.replace("/(tabs)")
-        } else if (user?.userType === "Client") {
-          console.log("redirecting to client tabs")
-          router.replace("/(client)")
-        }
-      }, 0)
-    }
-  }, [isAuthenticated, segments, isLoading, user?.userType])
+      if (isLoading) {
+        return;
+      }
+
+      const inAuthGroup =
+        segments[0] === "(modals)" &&
+        (segments[1] === "login" || segments[1] === "register" || segments[1] === "user-type");
+
+      if (!isAuthenticated && !inAuthGroup) {
+        setTimeout(() => {
+          console.log("redirecting to login");
+          router.replace("/login");
+        }, 100);
+      } else if (isAuthenticated && inAuthGroup) {
+        setTimeout(() => {
+          if (user?.userType === "Freelancer") {
+            console.log("redirecting to freelancer tabs");
+            router.replace("/(tabs)");
+          } else if (user?.userType === "Client") {
+            console.log("redirecting to client tabs");
+            router.replace("/(client)");
+          }
+        }, 100);
+      }
+    };
+
+    handleNavigation();
+  }, [isLoading, isAuthenticated, segments, user])
+);
 
   const signIn = async (email: string, password: string, rememberMe = false) => {
     try {
@@ -144,7 +163,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false
     }
   }
-
 
   const signUp = async (name: string, email: string, password: string, passwordConfirm: string, userType: string) => {
     try {
@@ -200,14 +218,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateUserData = async (newUser: Partial<User>) => {
-
     if (!user) return;
     const updatedUser = { ...user, ...newUser };
     setUser(updatedUser);
 
     await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
   }
-
 
   const signOut = async () => {
     try {

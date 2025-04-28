@@ -162,7 +162,7 @@ export default function MessagesScreen() {
                             key={conversation.id}
                             style={styles.conversationCard}
                             onPress={() => router.push({
-                                pathname: "/chat",
+                                pathname: "/(modals)/chat",
                                 params: {
                                     id: conversation.id,
                                     clientId: conversation.clientId,

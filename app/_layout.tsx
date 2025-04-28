@@ -98,6 +98,7 @@ function RootLayoutContent() {
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme
 
   return (
+    <AuthProvider>
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
@@ -109,15 +110,15 @@ function RootLayoutContent() {
         <StatusBar style="auto" />
       </ThemeProvider>
     </View>
+    </AuthProvider>
   )
 }
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
+    
       <RootLayoutContent />
-    </AuthProvider>
+    
   )
 }
-
 
