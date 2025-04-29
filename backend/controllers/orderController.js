@@ -12,6 +12,7 @@ const { sendNewOrderNotification } = require('../utils/notifications');
 exports.createOrder = catchAsync(async (req, res, next) => {
     const { gigID, selectedPackage } = req.body; 
     const clientID = req.user._id
+    const clientExpoPushToken = req.user.expoPushToken || ""
 
     if (!gigID || !clientID || !selectedPackage) {
         return next(new AppError('gigID, clientID, and selectedPackage are required', 400));

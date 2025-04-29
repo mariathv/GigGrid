@@ -6,7 +6,7 @@ export const apiRequest = async <T = any>(
     method: string = "POST",
     timeout: number = 20000 //20 seconds time out
 ): Promise<T> => {
-  
+        console.log("base",API_BASE_URL);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 

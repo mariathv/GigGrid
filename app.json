@@ -15,7 +15,9 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.kaguyasmo.GigGrid",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
